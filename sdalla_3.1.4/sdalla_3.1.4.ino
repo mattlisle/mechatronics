@@ -1,7 +1,7 @@
 /* Problem: 3.1.4
- * Author: Matthew Lisle
+ * Author: Shiv Dalla
  * Copyright: I don't have enough money to sue you anyway
- * License: None
+ * License: See above
  */
 
 /* -------------------- Includes -------------------- */
