@@ -186,6 +186,9 @@ byte compareFreq () {
   // Compute if the frequencies match
   bigger = max((byte)our_freq, (byte)their_freq);
   smaller = min((byte)our_freq, (byte)their_freq);
+  // If using Shiv's computer, use these two lines instead
+//  bigger = _max((byte)our_freq, (byte)their_freq);
+//  smaller = _min((byte)our_freq, (byte)their_freq);
   difference = bigger - (byte)(bigger * 0.9);
   
   return (bigger - smaller <= difference);
