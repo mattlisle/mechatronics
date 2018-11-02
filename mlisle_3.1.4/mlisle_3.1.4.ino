@@ -15,7 +15,7 @@
 #define LED_PIN       26
 #define ADC_PIN       35
 #define LOCALPORT     2800
-#define REMOTEPORT    2801
+#define REMOTEPORT    2801  
 
 /* -------------------- Global Variables -------------------- */
 // General
