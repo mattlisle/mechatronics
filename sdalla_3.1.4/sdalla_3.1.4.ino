@@ -184,8 +184,8 @@ byte compareFreq () {
   Serial.println(their_freq);
 
   // Compute if the frequencies match
-  bigger = max((byte)our_freq, (byte)their_freq);
-  smaller = min((byte)our_freq, (byte)their_freq);
+  bigger = _max((byte)our_freq, (byte)their_freq);
+  smaller = _min((byte)our_freq, (byte)their_freq);
   difference = bigger - (byte)(bigger * 0.9);
   
   return (bigger - smaller <= difference);
