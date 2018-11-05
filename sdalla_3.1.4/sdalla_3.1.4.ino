@@ -1,8 +1,8 @@
 /* Problem: 3.1.4
- * Author: Shiv Dalla
- * Copyright: I don't have enough money to sue you anyway
- * License: See above
- */
+   Author: Shiv Dalla
+   Copyright: I don't have enough money to sue you anyway
+   License: See above
+*/
 
 /* -------------------- Includes -------------------- */
 #include <SPI.h>
@@ -34,17 +34,17 @@ const char* password = "503greenzang";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 120);
 IPAddress ipTarget(192, 168, 1, 158);
-const int UDP_PACKET_SIZE = 100; 
+const int UDP_PACKET_SIZE = 100;
 char udpBuffer[UDP_PACKET_SIZE];
-byte packetBuffer[UDP_PACKET_SIZE+1];
+byte packetBuffer[UDP_PACKET_SIZE + 1];
 
 /***********************************
- * Function: IRAM_ATTR
- * Inputs: None
- * Outputs: None
- * ISR for LED state control
+   Function: IRAM_ATTR
+   Inputs: None
+   Outputs: None
+   ISR for LED state control
  ***********************************/
-void IRAM_ATTR onTimer(){
+void IRAM_ATTR onTimer() {
   led_state = !led_state;
   digitalWrite(LED_PIN, led_state);
 }
@@ -84,7 +84,7 @@ void loop() {
 
   // Controls interrupt alarm trigger and updates our_freq
   setFrequency();
-  
+
   // If the switch is on, end the game
   if (digitalRead(SWITCH_PIN)) {
     freq_match = compareFreq();
@@ -96,7 +96,7 @@ void loop() {
 
   // Communicate our frequency
   sendPacket();
-  
+
   // So we don't overwhelm anything
   delay(1);
 }
@@ -105,13 +105,13 @@ void loop() {
 /* -------------------- Functions -------------------- */
 
 /*******************************************************
- * Function: tryToWin
- * Inputs: freq_match - boolean true if freqs w/in 10%
- * Outputs: None
- * Figures out the winner and tells the other what to do
+   Function: tryToWin
+   Inputs: freq_match - boolean true if freqs w/in 10%
+   Outputs: None
+   Figures out the winner and tells the other what to do
  *******************************************************/
 void tryToWin (byte freq_match) {
-  
+
   // Pick values that will never otherwise be communicated
   byte communique = 0xFF * freq_match;
 
@@ -130,10 +130,10 @@ void tryToWin (byte freq_match) {
 
 
 /*******************************************************
- * Function: gameOver
- * Inputs: winner - boolean true if we won
- * Outputs: None
- * Controls built-in LED based on winner and resets game
+   Function: gameOver
+   Inputs: winner - boolean true if we won
+   Outputs: None
+   Controls built-in LED based on winner and resets game
  *******************************************************/
 void gameOver (byte winner) {
   // Signal if we won
@@ -152,10 +152,10 @@ void gameOver (byte winner) {
 
 
 /*******************************************************
- * Function: setFrequency
- * Inputs: None
- * Outputs: None
- * Controls frequency of PWM blinking
+   Function: setFrequency
+   Inputs: None
+   Outputs: None
+   Controls frequency of PWM blinking
  *******************************************************/
 void setFrequency () {
   adc_val = analogRead(ADC_PIN);
@@ -166,16 +166,16 @@ void setFrequency () {
 
 
 /*******************************************************
- * Function: compareFreq
- * Inputs: None
- * Outputs: freq_match
- * Returns 1 if frequencies are w/in 10% of e.o.
+   Function: compareFreq
+   Inputs: None
+   Outputs: freq_match
+   Returns 1 if frequencies are w/in 10% of e.o.
  *******************************************************/
 byte compareFreq () {
   byte bigger;
   byte smaller;
   byte difference;
-  
+
   // Update our frequency
   our_freq = counts / 500;
   Serial.print("Our Frequency: ");
@@ -184,22 +184,25 @@ byte compareFreq () {
   Serial.println(their_freq);
 
   // Compute if the frequencies match
-  bigger = _max((byte)our_freq, (byte)their_freq);
-  smaller = _min((byte)our_freq, (byte)their_freq);
+  bigger = max((byte)our_freq, (byte)their_freq);
+  smaller = min((byte)our_freq, (byte)their_freq);
+  // If using Shiv's computer, use these two lines instead
+  //  bigger = _max((byte)our_freq, (byte)their_freq);
+  //  smaller = _min((byte)our_freq, (byte)their_freq);
   difference = bigger - (byte)(bigger * 0.9);
-  
+
   return (bigger - smaller <= difference);
 }
 
 
 /*******************************************************
- * Function: readPacket
- * Inputs: None
- * Outputs: None
- * Updates their_freq if packet has been received
+   Function: readPacket
+   Inputs: None
+   Outputs: None
+   Updates their_freq if packet has been received
  *******************************************************/
 void readPacket () {
-  
+
   // Check if there's a packet to read
   int packetSize = udp.parsePacket();
   if (packetSize) {
@@ -222,10 +225,10 @@ void readPacket () {
 
 
 /*******************************************************
- * Function: sendPacket
- * Inputs: None
- * Outputs: None
- * Sends our_freq to their IP address
+   Function: sendPacket
+   Inputs: None
+   Outputs: None
+   Sends our_freq to their IP address
  *******************************************************/
 void sendPacket () {
 
@@ -241,5 +244,5 @@ void sendPacket () {
   // Let it fly
   udp.write((byte)udpBuffer[0]);
   udp.endPacket();
-  
+
 }
