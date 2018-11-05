@@ -60,15 +60,15 @@ void readPacket () {
   if (packetSize) {
     digitalWrite(LED_BUILTIN,HIGH);
     udp.read(packetBuffer, UDP_PACKET_SIZE);
-    byte val1 = packetBuffer[0];
-    byte val2 = packetBuffer[1];
+    int val1 = packetBuffer[0];
+    int val2 = packetBuffer[1];
 
     // Print what we got to serial
     Serial.println("----------");
     Serial.print("Received: ");
-    Serial.print(packetBuffer[0]);
+    Serial.print(val1);
     Serial.print(" and ");
-    Serial.print(packetBuffer[1]);
+    Serial.print(val2);
     delay(10);
     
 
