@@ -53,18 +53,19 @@ void loop() {
   int trimVal = analogRead(TRIM_PIN);
   int throtVal = analogRead(THROTTLE_PIN);
   int steerVal = analogRead(STEERING_PIN);
-//  Serial.print(trimVal);
-//  Serial.print(" , ");
-//  Serial.print(throtVal);
-//  Serial.print(" , ");
-//  Serial.println(steerVal);
+  Serial.print(trimVal);
+  Serial.print(" , ");
+  Serial.print(throtVal);
+  Serial.print(" , ");
+  Serial.println(steerVal);
   
 
   // Communicate 
   digitalWrite(LED_BUILTIN,HIGH);
   sendPacket(throtVal, steerVal);
-  delay(100);
   digitalWrite(LED_BUILTIN,LOW);
+  delay(100);
+  
   
 
 }
