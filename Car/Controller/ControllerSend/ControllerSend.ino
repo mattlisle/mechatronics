@@ -12,7 +12,7 @@
 /* -------------------- Defines -------------------- */
 #define LED_BUILTIN   2
 #define TRIM_PIN     33
-#define STEERING_PIN  25
+#define STEERING_PIN   35
 #define THROTTLE_PIN   32
 #define LOCALPORT     2801
 #define REMOTEPORT    2800
@@ -30,6 +30,9 @@ byte packetBuffer[UDP_PACKET_SIZE+1];
 
 void setup() {
   pinMode(LED_BUILTIN,OUTPUT);
+  pinMode(TRIM_PIN,INPUT);
+  pinMode(STEERING_PIN,INPUT);
+  pinMode(THROTTLE_PIN,INPUT);
   Serial.begin(115200);
 
   delay(10);
@@ -70,16 +73,17 @@ void loop() {
 
 }
 
-void sendPacket (int throttle, int steering){
-  
+void sendPacket (int throttleIn, int steeringIn){
+  int throttle = map(throttleIn,0,4098,1,255);
+  int steering = map(steeringIn,0,4098,1,255);
   // set all bytes in the buffer to 0
   memset(udpBuffer, 0, UDP_PACKET_SIZE); 
 
   //sprintf((char*)udpBuffer,"%u,%u",throttle, steering);
 
-  // Load the buffer
-  udpBuffer[0] = throttle+1;
-  udpBuffer[1] = steering+1;
+  // Load the buffer, maybe add one so theyre never zero?
+  udpBuffer[0] = throttle;
+  udpBuffer[1] = steering;
   udp.beginPacket(ipTarget, REMOTEPORT);
 
   // Print what we're going to send to serial

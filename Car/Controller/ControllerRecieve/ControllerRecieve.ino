@@ -27,6 +27,7 @@ char udpBuffer[UDP_PACKET_SIZE];
 byte packetBuffer[UDP_PACKET_SIZE+1];
 
 void setup() {
+  pinMode(LED_BUILTIN,OUTPUT);
   Serial.begin(115200);
 
   delay(10);
@@ -54,8 +55,10 @@ void loop() {
 void readPacket () {
   
   // Check if there's a packet to read
+  
   int packetSize = udp.parsePacket();
   if (packetSize) {
+    digitalWrite(LED_BUILTIN,HIGH);
     udp.read(packetBuffer, UDP_PACKET_SIZE);
     byte val1 = packetBuffer[0];
     byte val2 = packetBuffer[1];
@@ -66,13 +69,13 @@ void readPacket () {
     Serial.print(packetBuffer[0]);
     Serial.print(" and ");
     Serial.print(packetBuffer[1]);
-    Serial.print(" and ");
-    Serial.print(packetBuffer[2]);
-    Serial.print(" and ");
-    Serial.print(packetBuffer[3]);
-  
-//    Serial.println(val2, BIN);
+    delay(10);
+    
 
+  }
+  // LED debugging
+  else{
+    digitalWrite(LED_BUILTIN,LOW);
   }
 
 }
