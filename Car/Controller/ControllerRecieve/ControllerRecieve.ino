@@ -62,6 +62,7 @@ void readPacket () {
     udp.read(packetBuffer, UDP_PACKET_SIZE);
     int val1 = packetBuffer[0];
     int val2 = packetBuffer[1];
+    int dir = packetBuffer[2];
 
     // Print what we got to serial
     Serial.println("----------");
@@ -69,6 +70,11 @@ void readPacket () {
     Serial.print(val1);
     Serial.print(" and ");
     Serial.print(val2);
+    Serial.print(" and ");
+    Serial.print(dir,BIN);
+    //use bitread to get direction values 
+    int dir_right = bitRead(dir, 0);
+    int dir_left = bitRead(dir,1);
     delay(10);
     
 

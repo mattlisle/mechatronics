@@ -56,34 +56,56 @@ void loop() {
   int trimVal = analogRead(TRIM_PIN);
   int throtVal = analogRead(THROTTLE_PIN);
   int steerVal = analogRead(STEERING_PIN);
+  //dir val will be either 0, 1, or 2, 3 (2 bits, one for each motor)
+  // 0 is backwards, 1 is forwards 
+  byte dirVal = 3;
   Serial.print(trimVal);
   Serial.print(" , ");
   Serial.print(throtVal);
   Serial.print(" , ");
   Serial.println(steerVal);
+  //Throttle goes from 0 (reverse) to 4095 (forward), center at 1872
+  //Steering goes from 4095(full left) to 0(full right), center at 1892
+  //Trim goes from 4095(full left rot) to 0(full right rot)
   
+  //Quick maffs to take these values and make them into control values
+  
+  // TODO: TUNE THE MAPPING, RESTING POINT ISNT EXACTLY IN THE MIDDLE
+  int mag_val = map(throtVal, 0, 4095, -255, 255);
+  int dir_val = map(steerVal, 0, 4095, -100, 100);
+
+  int dc_right = _min(255, abs(mag_val + dir_val));
+  int dc_left = _min(255, abs(mag_val - dir_val));
+
+  int dir_right = (mag_val - dir_val) < 0;
+  int dir_left = (mag_val + dir_val) > 0;
+  //write these bits to dirVal so it can be sent as single number
+  bitWrite(dirVal, 0, dir_right);
+  bitWrite(dirVal, 1, dir_left);
+
+  //TODO: ADD TRIM POT VALUE INTO THE MIX
 
   // Communicate 
   digitalWrite(LED_BUILTIN,HIGH);
-  sendPacket(throtVal, steerVal);
+  sendPacket(dc_right, dc_left, dirVal);
   digitalWrite(LED_BUILTIN,LOW);
-  delay(100);
+  delay(50);
   
   
 
 }
 
-void sendPacket (int throttleIn, int steeringIn){
-  int throttle = map(throttleIn,0,4098,1,255);
-  int steering = map(steeringIn,0,4098,1,255);
+void sendPacket (int throttleIn, int steeringIn, byte dirIn){
+  
   // set all bytes in the buffer to 0
   memset(udpBuffer, 0, UDP_PACKET_SIZE); 
 
   //sprintf((char*)udpBuffer,"%u,%u",throttle, steering);
 
   // Load the buffer, maybe add one so theyre never zero?
-  udpBuffer[0] = throttle;
-  udpBuffer[1] = steering;
+  udpBuffer[0] = throttleIn;
+  udpBuffer[1] = steeringIn;
+  udpBuffer[2] = dirIn;
   udp.beginPacket(ipTarget, REMOTEPORT);
 
   // Print what we're going to send to serial
