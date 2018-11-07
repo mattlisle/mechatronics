@@ -60,7 +60,9 @@ void readPacket () {
   if (packetSize) {
     digitalWrite(LED_BUILTIN,HIGH);
     udp.read(packetBuffer, UDP_PACKET_SIZE);
+    //this is right side pwm
     int val1 = packetBuffer[0];
+    //this is left side pwm
     int val2 = packetBuffer[1];
     int dir = packetBuffer[2];
 
