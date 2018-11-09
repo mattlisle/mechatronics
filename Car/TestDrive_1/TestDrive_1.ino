@@ -11,20 +11,24 @@
 
 /* -------------------- Defines -------------------- */
 #define LED_BUILTIN   2
-#define EN1   13
-#define H1A   12
-#define H2A   14
-#define EN3   25
-#define H3A   26  
-#define H4A   27
+#define EN1   23 //4
+#define H1A   21
+#define H2A   17
+#define EN3   22
+#define H3A   19
+#define H4A   18
+#define UD    35
+#define LR    34
 
 /* -------------------- Global Variables -------------------- */
+int mag_val;
 int dir_val;
-byte dc_left[8] = {0, 100, 100, 0, 0, 100, 100, 0};
-byte dc_right[8] = {0, 0, 100, 100, 0, 0, 100, 100};
-byte dir_left[8] = {1, 1, 1, 1, 0, 0, 0, 0};
-byte dir_right[8] = {1, 1, 1, 1, 0, 0, 0, 0};
-byte i;
+byte dc_left;
+byte dc_right;
+byte dir_left;
+byte dir_right;
+
+volatile byte state = LOW;
 
 // For setting up ledcChannel
 byte resolution = 8;
@@ -37,9 +41,11 @@ int freq = 200;
 /* -------------------- Code -------------------- */
 
 void setup() {
-  //  Serial.begin(115200);
-  //  delay(10);
+//  Serial.begin(115200);
+//  delay(10);
 
+  pinMode(UD, INPUT);
+  pinMode(LR, INPUT);
   pinMode(EN1, OUTPUT);
   pinMode(H1A, OUTPUT);
   pinMode(H2A, OUTPUT);
@@ -54,7 +60,14 @@ void setup() {
 }
 
 void loop() {
+  mag_val = map(analogRead(UD), 0, 4095, -255, 255);
+  dir_val = map(analogRead(LR), 0, 4095, -100, 100);
 
+  dc_right = _min(255, abs(mag_val + dir_val));
+  dc_left = _min(255, abs(mag_val - dir_val));
+
+  dir_right = (mag_val + dir_val) < 0;
+  dir_left = (mag_val - dir_val) > 0;
 //  
 //  Serial.println("----------");
 //  Serial.print("UD: ");
@@ -62,24 +75,24 @@ void loop() {
 //  Serial.print("LR: ");
 //  Serial.println(dir_val);
 //  Serial.print("dir_left: ");
-//  Serial.println(dir_left[i]);
+//  Serial.println(dir_left);
 //  Serial.print("dir_right: ");
-//  Serial.println(dir_right[i]);
+//  Serial.println(dir_right);
 //  Serial.print("dc_left: ");
-//  Serial.println(dc_left[i]);
+//  Serial.println(dc_left);
 //  Serial.print("dc_right: ");
-//  Serial.println(dc_right[i]);
+//  Serial.println(dc_right);
 
 //  digitalWrite(EN1, state);
 //  state = !state;
-  if (dir_left[i]) {
+  if (dir_left) {
     digitalWrite(H1A, LOW);
     digitalWrite(H2A, HIGH);
   } else {
     digitalWrite(H2A, LOW);
     digitalWrite(H1A, HIGH);
   }
-  if (dir_right[i]) {
+  if (dir_right) {
     digitalWrite(H3A, LOW);
     digitalWrite(H4A, HIGH);
   } else {
@@ -87,16 +100,10 @@ void loop() {
     digitalWrite(H3A, HIGH);
   }
   
-  ledcWrite(left_channel, dc_left[i]);
-  ledcWrite(right_channel, dc_right[i]);
+  ledcWrite(left_channel, dc_left);
+  ledcWrite(right_channel, dc_right);
 
-  if (i == 7) {
-    i = 0;
-  } else {
-    i += 1;
-  }
-
-  delay(1000);
+  delay(100);
 }
 
 

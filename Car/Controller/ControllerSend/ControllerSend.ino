@@ -19,8 +19,8 @@
 
 
 /* -------------------- Wifi Setup -------------------- */
-const char* ssid = "iPhoneHotspot";
-const char* password = "sexpanther";
+const char* ssid = "Mechatronics";
+const char* password = "YayFunFun";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 120);
 IPAddress ipTarget(192, 168, 1, 158);
@@ -54,16 +54,15 @@ void setup() {
 void loop() {
   
   int trimVal = analogRead(TRIM_PIN);
-  int throtVal = analogRead(THROTTLE_PIN);
-  int steerVal = analogRead(STEERING_PIN);
+  
   //dir val will be either 0, 1, or 2, 3 (2 bits, one for each motor)
   // 0 is backwards, 1 is forwards 
   byte dirVal = 3;
-  Serial.print(trimVal);
-  Serial.print(" , ");
-  Serial.print(throtVal);
-  Serial.print(" , ");
-  Serial.println(steerVal);
+//  Serial.print(trimVal);
+//  Serial.print(" , ");
+//  Serial.print(throtVal);
+//  Serial.print(" , ");
+//  Serial.println(steerVal);
   //Throttle goes from 0 (reverse) to 4095 (forward), center at 1872
   //Steering goes from 4095(full left) to 0(full right), center at 1892
   //Trim goes from 4095(full left rot) to 0(full right rot)
@@ -71,17 +70,28 @@ void loop() {
   //Quick maffs to take these values and make them into control values
   
   // TODO: TUNE THE MAPPING, RESTING POINT ISNT EXACTLY IN THE MIDDLE
-  int mag_val = map(throtVal, 0, 4095, -255, 255);
-  int dir_val = map(steerVal, 0, 4095, -100, 100);
+  int mag_val = map(analogRead(THROTTLE_PIN), 0, 4095, -255, 255);
+  int dir_val = map(analogRead(STEERING_PIN), 0, 4095, -100, 100);
 
   int dc_right = _min(255, abs(mag_val + dir_val));
   int dc_left = _min(255, abs(mag_val - dir_val));
 
-  int dir_right = (mag_val - dir_val) < 0;
-  int dir_left = (mag_val + dir_val) > 0;
+  int dir_right = (mag_val + dir_val) > 0;
+  int dir_left = (mag_val - dir_val) > 0;
+  Serial.println("----------");
+  Serial.print("mag_val: ");
+  Serial.println(mag_val);
+  Serial.print("dir_val: ");
+  Serial.println(dir_val);
+  Serial.print("dir_left: ");
+  Serial.println(dir_left);
+  Serial.print("dir_right: ");
+  Serial.println(dir_right);
+  
   //write these bits to dirVal so it can be sent as single number
-  bitWrite(dirVal, 0, dir_right);
-  bitWrite(dirVal, 1, dir_left);
+  bitWrite(dirVal, 0, 1);
+  bitWrite(dirVal, 1, dir_right);
+  bitWrite(dirVal, 2, dir_left);
 
   //TODO: ADD TRIM POT VALUE INTO THE MIX
 
@@ -114,6 +124,9 @@ void sendPacket (int throttleIn, int steeringIn, byte dirIn){
   //Serial.println(udpBuffer[0], BIN);
   //Serial.print("and ");
   //Serial.println(udpBuffer[1], BIN);
+  Serial.print("dirVal: ");
+  Serial.print(bitRead(udpBuffer[2], 1), BIN);
+  Serial.println(bitRead(udpBuffer[2], 0), BIN);
 
   // Let it fly
   udp.print(udpBuffer);

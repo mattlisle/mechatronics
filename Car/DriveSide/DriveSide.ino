@@ -10,25 +10,26 @@
 #include <WiFiUdp.h>
 
 /* -------------------- Defines -------------------- */
+// Pins
 #define LED_BUILTIN   2
-#define EN1   23 //4
-#define H1A   21
-#define H2A   17
-#define EN3   22
-#define H3A   19
-#define H4A   18
-#define UD    35
-#define LR    34
+#define EN1   13
+#define H1A   12
+#define H2A   14
+#define EN3   25
+#define H3A   27  
+#define H4A   26
+
+// Wifi
+#define LOCALPORT       2800
+#define REMOTEPORT      2801
+#define UDP_PACKET_SIZE 10
 
 /* -------------------- Global Variables -------------------- */
-int mag_val;
-int dir_val;
+// Motor command variables
 byte dc_left;
 byte dc_right;
 byte dir_left;
 byte dir_right;
-
-volatile byte state = LOW;
 
 // For setting up ledcChannel
 byte resolution = 8;
@@ -36,16 +37,26 @@ byte left_channel = 1;
 byte right_channel = 2;
 int freq = 200;
 
+// Wifi
+const char* ssid = "Mechatronics";
+const char* password = "YayFunFun";
+WiFiUDP udp;
+IPAddress myIPaddress(192, 168, 1, 158);
+IPAddress ipTarget(192, 168, 1, 120);
+char udpBuffer[UDP_PACKET_SIZE];
+byte packetBuffer[UDP_PACKET_SIZE + 1];
+
+
 /* -------------------- ISRs -------------------- */
 
 /* -------------------- Code -------------------- */
 
 void setup() {
-//  Serial.begin(115200);
-//  delay(10);
+  Serial.begin(115200);
+  delay(10);
 
-  pinMode(UD, INPUT);
-  pinMode(LR, INPUT);
+  // Pins
+  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(EN1, OUTPUT);
   pinMode(H1A, OUTPUT);
   pinMode(H2A, OUTPUT);
@@ -57,34 +68,74 @@ void setup() {
   ledcSetup(right_channel, freq, resolution);
   ledcAttachPin(EN1, left_channel);
   ledcAttachPin(EN3, right_channel);
+
+  // Wifi setup
+  WiFi.config(myIPaddress, IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
+  WiFi.begin(ssid, password);
+  udp.begin(LOCALPORT);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  packetBuffer[UDP_PACKET_SIZE] = 0;
+  
 }
 
 void loop() {
-  mag_val = map(analogRead(UD), 0, 4095, -255, 255);
-  dir_val = map(analogRead(LR), 0, 4095, -100, 100);
+  readPacket();
+  controlMotors();
+  
+  Serial.println("----------");
+  Serial.print("dir_left: ");
+  Serial.println(dir_left);
+  Serial.print("dir_right: ");
+  Serial.println(dir_right);
+  Serial.print("dc_left: ");
+  Serial.println(dc_left);
+  Serial.print("dc_right: ");
+  Serial.println(dc_right);
 
-  dc_right = _min(255, abs(mag_val + dir_val));
-  dc_left = _min(255, abs(mag_val - dir_val));
+  delay(50);
+}
 
-  dir_right = (mag_val + dir_val) < 0;
-  dir_left = (mag_val - dir_val) > 0;
-//  
-//  Serial.println("----------");
-//  Serial.print("UD: ");
-//  Serial.println(mag_val);
-//  Serial.print("LR: ");
-//  Serial.println(dir_val);
-//  Serial.print("dir_left: ");
-//  Serial.println(dir_left);
-//  Serial.print("dir_right: ");
-//  Serial.println(dir_right);
-//  Serial.print("dc_left: ");
-//  Serial.println(dc_left);
-//  Serial.print("dc_right: ");
-//  Serial.println(dc_right);
 
-//  digitalWrite(EN1, state);
-//  state = !state;
+/* -------------------- Functions -------------------- */
+
+void readPacket () {
+  
+  // Check if there's a packet to read
+  int packetSize = udp.parsePacket();
+  Serial.print("packetSize: ");
+  Serial.println(packetSize);
+  if (packetSize) {
+    // We've received a packet, so let's celebrate
+    digitalWrite(LED_BUILTIN,HIGH);
+
+    // Read the packet into the buffer
+    udp.read(packetBuffer, UDP_PACKET_SIZE);
+
+    // Parse the first to bytes into duty cycles
+    dc_right = packetBuffer[0];
+    dc_left = packetBuffer[1];
+
+    // Parse the directions from the third byte
+    byte dir = packetBuffer[2];
+    dir_right = bitRead(dir, 1);
+    dir_left = bitRead(dir,2);
+
+  }
+  // No packet received, sad.
+  else{
+    digitalWrite(LED_BUILTIN,LOW);
+  }
+  Serial.print("dir: ");
+  Serial.println(packetBuffer[2], BIN);
+
+}
+
+void controlMotors () {
+
+  // Set and clear H-bridge pins to control direction
   if (dir_left) {
     digitalWrite(H1A, LOW);
     digitalWrite(H2A, HIGH);
@@ -99,12 +150,8 @@ void loop() {
     digitalWrite(H4A, LOW);
     digitalWrite(H3A, HIGH);
   }
-  
+
+  // Generate PWM signal based on supplied duty cycle
   ledcWrite(left_channel, dc_left);
   ledcWrite(right_channel, dc_right);
-
-  delay(100);
 }
-
-
-/* -------------------- Functions -------------------- */
