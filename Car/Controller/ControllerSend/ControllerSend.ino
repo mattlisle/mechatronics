@@ -19,8 +19,10 @@
 
 
 /* -------------------- Wifi Setup -------------------- */
-const char* ssid = "Mechatronics";
-const char* password = "YayFunFun";
+//const char* ssid = "Mechatronics";
+//const char* password = "YayFunFun";
+const char* ssid = "iPhoneHotspot";
+const char* password = "sexpanther";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 120);
 IPAddress ipTarget(192, 168, 1, 158);
