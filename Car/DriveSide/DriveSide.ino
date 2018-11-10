@@ -38,8 +38,8 @@ byte right_channel = 2;
 int freq = 200;
 
 // Wifi
-const char* ssid = "Mechatronics";
-const char* password = "YayFunFun";
+const char* ssid = "iPhoneHotspot";
+const char* password = "sexpanther";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 158);
 IPAddress ipTarget(192, 168, 1, 120);
