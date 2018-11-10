@@ -26,9 +26,6 @@
 
 
 /* -------------------- Global Varibales -------------------- */
-// To register GO! command
-int go = 0;
-
 // WiFi
 const char* ssid = "Mechatronics";
 const char* password = "YayFunFun";
