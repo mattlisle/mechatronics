@@ -30,7 +30,7 @@ byte dc_left;
 byte dc_right;
 byte dir_left;
 byte dir_right;
-int go = 0;
+
 
 // For setting up ledcChannel
 byte resolution = 8;
@@ -84,9 +84,9 @@ void setup() {
 
 void loop() {
 
-  waitForGo();
   
-  while(go){
+  
+  
     //Serial.println(go);
     readPacket();
     controlMotors();
@@ -104,7 +104,7 @@ void loop() {
     //we could remove this delay to get rid of some latency 
     //only need it on sending
     //delay(50);
-  }
+  
 }
 
 

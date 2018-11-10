@@ -17,6 +17,7 @@
 // will need to change these on day of
 #define LOCALPORT     2801
 #define REMOTEPORT    2800
+int go = 0;
 
 
 /* -------------------- Wifi Setup -------------------- */
@@ -55,56 +56,59 @@ void setup() {
 }
 
 void loop() {
+  //Comment or uncomment 
+  //waitForGo();
+  //while(go){
+  while(1){
+    int trimVal = analogRead(TRIM_PIN);
+    
+    //dir val will be either 0, 1, or 2, 3 (2 bits, one for each motor)
+    // 0 is backwards, 1 is forwards 
+    byte dirVal = 3;
+  //  Serial.print(trimVal);
+  //  Serial.print(" , ");
+  //  Serial.print(throtVal);
+  //  Serial.print(" , ");
+  //  Serial.println(steerVal);
+    //Throttle goes from 0 (reverse) to 4095 (forward), center at 1872
+    //Steering goes from 4095(full left) to 0(full right), center at 1892
+    //Trim goes from 4095(full left rot) to 0(full right rot)
+    
+    //Quick maffs to take these values and make them into control values
+    int throtleOffset = 2047-1872;
+    int steeringOffset = 2047-1892;
+    // TODO: TUNE THE MAPPING, RESTING POINT ISNT EXACTLY IN THE MIDDLE
+    int mag_val = map(analogRead(THROTTLE_PIN)+throtleOffset, 0, 4095, -255, 255);
+    int dir_val = map(analogRead(STEERING_PIN)+steeringOffset, 0, 4095, -100, 100);
   
-  int trimVal = analogRead(TRIM_PIN);
+    int dc_right = _min(255, abs(mag_val + dir_val));
+    int dc_left = _min(255, abs(mag_val - dir_val));
   
-  //dir val will be either 0, 1, or 2, 3 (2 bits, one for each motor)
-  // 0 is backwards, 1 is forwards 
-  byte dirVal = 3;
-//  Serial.print(trimVal);
-//  Serial.print(" , ");
-//  Serial.print(throtVal);
-//  Serial.print(" , ");
-//  Serial.println(steerVal);
-  //Throttle goes from 0 (reverse) to 4095 (forward), center at 1872
-  //Steering goes from 4095(full left) to 0(full right), center at 1892
-  //Trim goes from 4095(full left rot) to 0(full right rot)
+    int dir_right = (mag_val + dir_val) > 0;
+    int dir_left = (mag_val - dir_val) > 0;
+  //  Serial.println("----------");
+  //  Serial.print("mag_val: ");
+  //  Serial.println(mag_val);
+  //  Serial.print("dir_val: ");
+  //  Serial.println(dir_val);
+  //  Serial.print("dir_left: ");
+  //  Serial.println(dir_left);
+  //  Serial.print("dir_right: ");
+  //  Serial.println(dir_right);
+    
+    //write these bits to dirVal so it can be sent as single number
+    bitWrite(dirVal, 0, 1);
+    bitWrite(dirVal, 1, dir_right);
+    bitWrite(dirVal, 2, dir_left);
   
-  //Quick maffs to take these values and make them into control values
-  int throtleOffset = 2047-1872;
-  int steeringOffset = 2047-1892;
-  // TODO: TUNE THE MAPPING, RESTING POINT ISNT EXACTLY IN THE MIDDLE
-  int mag_val = map(analogRead(THROTTLE_PIN)+throtleOffset, 0, 4095, -255, 255);
-  int dir_val = map(analogRead(STEERING_PIN)+steeringOffset, 0, 4095, -100, 100);
-
-  int dc_right = _min(255, abs(mag_val + dir_val));
-  int dc_left = _min(255, abs(mag_val - dir_val));
-
-  int dir_right = (mag_val + dir_val) > 0;
-  int dir_left = (mag_val - dir_val) > 0;
-  Serial.println("----------");
-  Serial.print("mag_val: ");
-  Serial.println(mag_val);
-  Serial.print("dir_val: ");
-  Serial.println(dir_val);
-  Serial.print("dir_left: ");
-  Serial.println(dir_left);
-  Serial.print("dir_right: ");
-  Serial.println(dir_right);
+    //TODO: ADD TRIM POT VALUE INTO THE MIX
   
-  //write these bits to dirVal so it can be sent as single number
-  bitWrite(dirVal, 0, 1);
-  bitWrite(dirVal, 1, dir_right);
-  bitWrite(dirVal, 2, dir_left);
-
-  //TODO: ADD TRIM POT VALUE INTO THE MIX
-
-  // Communicate 
-  digitalWrite(LED_BUILTIN,HIGH);
-  sendPacket(dc_right, dc_left, dirVal);
-  digitalWrite(LED_BUILTIN,LOW);
-  delay(50);
-  
+    // Communicate 
+    digitalWrite(LED_BUILTIN,HIGH);
+    sendPacket(dc_right, dc_left, dirVal);
+    digitalWrite(LED_BUILTIN,LOW);
+    delay(50);
+  }
   
 
 }
@@ -128,12 +132,28 @@ void sendPacket (int throttleIn, int steeringIn, byte dirIn){
   //Serial.println(udpBuffer[0], BIN);
   //Serial.print("and ");
   //Serial.println(udpBuffer[1], BIN);
-  Serial.print("dirVal: ");
-  Serial.print(bitRead(udpBuffer[2], 1), BIN);
-  Serial.println(bitRead(udpBuffer[2], 0), BIN);
+//  Serial.print("dirVal: ");
+//  Serial.print(bitRead(udpBuffer[2], 1), BIN);
+//  Serial.println(bitRead(udpBuffer[2], 0), BIN);
 
   // Let it fly
   udp.print(udpBuffer);
  
   udp.endPacket();
+}
+
+void waitForGo(){
+  int cb= udp.parsePacket();
+  if(cb) {
+    udp.read(packetBuffer, UDP_PACKET_SIZE);
+    String myData= "";
+    for(int i= 0; i < UDP_PACKET_SIZE; i++) {
+      myData += (char)packetBuffer[i];
+     }
+    //Serial.println(myData);
+   if(myData.equals("GO!")){
+      //Serial.println("LETS FUCKIN GO!");
+      go = 1;
+   }
+  }
 }
