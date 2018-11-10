@@ -30,7 +30,7 @@ byte dc_left;
 byte dc_right;
 byte dir_left;
 byte dir_right;
-bool go = FALSE;
+int go = 0;
 
 // For setting up ledcChannel
 byte resolution = 8;
@@ -84,25 +84,26 @@ void setup() {
 
 void loop() {
 
-  go = waitForGo();
+  waitForGo();
   
   while(go){
+    //Serial.println(go);
     readPacket();
     controlMotors();
-    
-    Serial.println("----------");
-    Serial.print("dir_left: ");
-    Serial.println(dir_left);
-    Serial.print("dir_right: ");
-    Serial.println(dir_right);
-    Serial.print("dc_left: ");
-    Serial.println(dc_left);
-    Serial.print("dc_right: ");
-    Serial.println(dc_right);
+    // comment print statements for now
+//    Serial.println("----------");
+//    Serial.print("dir_left: ");
+//    Serial.println(dir_left);
+//    Serial.print("dir_right: ");
+//    Serial.println(dir_right);
+//    Serial.print("dc_left: ");
+//    Serial.println(dc_left);
+//    Serial.print("dc_right: ");
+//    Serial.println(dc_right);
 
     //we could remove this delay to get rid of some latency 
     //only need it on sending
-    delay(50);
+    //delay(50);
   }
 }
 
@@ -113,8 +114,8 @@ void readPacket () {
   
   // Check if there's a packet to read
   int packetSize = udp.parsePacket();
-  Serial.print("packetSize: ");
-  Serial.println(packetSize);
+  //Serial.print("packetSize: ");
+  //Serial.println(packetSize);
   if (packetSize) {
     // We've received a packet, so let's celebrate
     digitalWrite(LED_BUILTIN,HIGH);
@@ -136,8 +137,8 @@ void readPacket () {
   else{
     digitalWrite(LED_BUILTIN,LOW);
   }
-  Serial.print("dir: ");
-  Serial.println(packetBuffer[2], BIN);
+  //Serial.print("dir: ");
+  //Serial.println(packetBuffer[2], BIN);
 
 }
 
@@ -164,16 +165,18 @@ void controlMotors () {
   ledcWrite(right_channel, dc_right);
 }
 
-bool waitForGo(){
+void waitForGo(){
   int cb= udp.parsePacket();
   if(cb) {
-    udp.read(packetBuffer, packetSize);
+    udp.read(packetBuffer, UDP_PACKET_SIZE);
     String myData= "";
-    for(int i= 0; i < packetSize; i++) {
+    for(int i= 0; i < UDP_PACKET_SIZE; i++) {
       myData += (char)packetBuffer[i];
      }
+    Serial.println(myData);
    if(myData.equals("GO!")){
       Serial.println("LETS FUCKIN GO!");
+      go = 1;
    }
-   return (myData.equals("GO!"));
+  }
 }
