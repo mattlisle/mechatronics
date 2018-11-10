@@ -1,5 +1,5 @@
-/* Problem: 3.1.4
- * Author: Shiv Dalla
+/* Lab 3.2: DriveSide
+ * Author: Shiv, Victoria, Matt
  * Copyright: I don't have enough money to sue you anyway
  * License: See above
  */
@@ -38,9 +38,9 @@ byte left_channel = 1;
 byte right_channel = 2;
 int freq = 200;
 
-// Wifi
-const char* ssid = "iPhoneHotspot";
-const char* password = "sexpanther";
+// WiFi
+const char* ssid = "Mechatronics";
+const char* password = "YayFunFun";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 158);
 IPAddress ipTarget(192, 168, 1, 120);
@@ -64,13 +64,14 @@ void setup() {
   pinMode(EN3, OUTPUT);
   pinMode(H3A, OUTPUT);
   pinMode(H4A, OUTPUT);
-  
+
+  // PWM
   ledcSetup(left_channel, freq, resolution);
   ledcSetup(right_channel, freq, resolution);
   ledcAttachPin(EN1, left_channel);
   ledcAttachPin(EN3, right_channel);
 
-  // Wifi setup
+  // WiFi
   WiFi.config(myIPaddress, IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
   WiFi.begin(ssid, password);
   udp.begin(LOCALPORT);
@@ -83,39 +84,24 @@ void setup() {
 }
 
 void loop() {
-
-  
-  
-  
-    //Serial.println(go);
+    // Read the packet sent by the controller
     readPacket();
-    controlMotors();
-    // comment print statements for now
-//    Serial.println("----------");
-//    Serial.print("dir_left: ");
-//    Serial.println(dir_left);
-//    Serial.print("dir_right: ");
-//    Serial.println(dir_right);
-//    Serial.print("dc_left: ");
-//    Serial.println(dc_left);
-//    Serial.print("dc_right: ");
-//    Serial.println(dc_right);
 
-    //we could remove this delay to get rid of some latency 
-    //only need it on sending
-    //delay(50);
-  
+    // Use values in packet to control motors
+    controlMotors();
 }
 
 
 /* -------------------- Functions -------------------- */
 
+/*******************************************************
+ * Function: readPacket
+ * Reads packet from Controller into dc and dir variables
+ *******************************************************/
 void readPacket () {
   
   // Check if there's a packet to read
   int packetSize = udp.parsePacket();
-  //Serial.print("packetSize: ");
-  //Serial.println(packetSize);
   if (packetSize) {
     // We've received a packet, so let's celebrate
     digitalWrite(LED_BUILTIN,HIGH);
@@ -137,11 +123,13 @@ void readPacket () {
   else{
     digitalWrite(LED_BUILTIN,LOW);
   }
-  //Serial.print("dir: ");
-  //Serial.println(packetBuffer[2], BIN);
-
 }
 
+
+/*******************************************************
+ * Function: controlMotors
+ * Controls duty cycle, direction of PWM to each motor
+ *******************************************************/
 void controlMotors () {
 
   // Set and clear H-bridge pins to control direction
@@ -163,20 +151,4 @@ void controlMotors () {
   // Generate PWM signal based on supplied duty cycle
   ledcWrite(left_channel, dc_left);
   ledcWrite(right_channel, dc_right);
-}
-
-void waitForGo(){
-  int cb= udp.parsePacket();
-  if(cb) {
-    udp.read(packetBuffer, UDP_PACKET_SIZE);
-    String myData= "";
-    for(int i= 0; i < UDP_PACKET_SIZE; i++) {
-      myData += (char)packetBuffer[i];
-     }
-    Serial.println(myData);
-   if(myData.equals("GO!")){
-      Serial.println("LETS FUCKIN GO!");
-      go = 1;
-   }
-  }
 }

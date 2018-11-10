@@ -1,5 +1,5 @@
-/* Car Controller
- * Author: Shiv Dalla
+/* Lab 3.2: Car Controller
+ * Author: Shiv, Victoria, Matt
  * Copyright: I don't have enough money to sue you anyway
  * License: See above
  */
