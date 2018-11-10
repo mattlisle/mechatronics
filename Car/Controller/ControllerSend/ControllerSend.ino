@@ -14,6 +14,7 @@
 #define TRIM_PIN     33
 #define STEERING_PIN   35
 #define THROTTLE_PIN   32
+// will need to change these on day of
 #define LOCALPORT     2801
 #define REMOTEPORT    2800
 

@@ -30,6 +30,7 @@ byte dc_left;
 byte dc_right;
 byte dir_left;
 byte dir_right;
+bool go = FALSE;
 
 // For setting up ledcChannel
 byte resolution = 8;
@@ -82,20 +83,27 @@ void setup() {
 }
 
 void loop() {
-  readPacket();
-  controlMotors();
-  
-  Serial.println("----------");
-  Serial.print("dir_left: ");
-  Serial.println(dir_left);
-  Serial.print("dir_right: ");
-  Serial.println(dir_right);
-  Serial.print("dc_left: ");
-  Serial.println(dc_left);
-  Serial.print("dc_right: ");
-  Serial.println(dc_right);
 
-  delay(50);
+  go = waitForGo();
+  
+  while(go){
+    readPacket();
+    controlMotors();
+    
+    Serial.println("----------");
+    Serial.print("dir_left: ");
+    Serial.println(dir_left);
+    Serial.print("dir_right: ");
+    Serial.println(dir_right);
+    Serial.print("dc_left: ");
+    Serial.println(dc_left);
+    Serial.print("dc_right: ");
+    Serial.println(dc_right);
+
+    //we could remove this delay to get rid of some latency 
+    //only need it on sending
+    delay(50);
+  }
 }
 
 
@@ -154,4 +162,18 @@ void controlMotors () {
   // Generate PWM signal based on supplied duty cycle
   ledcWrite(left_channel, dc_left);
   ledcWrite(right_channel, dc_right);
+}
+
+bool waitForGo(){
+  int cb= udp.parsePacket();
+  if(cb) {
+    udp.read(packetBuffer, packetSize);
+    String myData= "";
+    for(int i= 0; i < packetSize; i++) {
+      myData += (char)packetBuffer[i];
+     }
+   if(myData.equals("GO!")){
+      Serial.println("LETS FUCKIN GO!");
+   }
+   return (myData.equals("GO!"));
 }
