@@ -71,10 +71,11 @@ void loop() {
   //Trim goes from 4095(full left rot) to 0(full right rot)
   
   //Quick maffs to take these values and make them into control values
-  
+  int throtleOffset = 2047-1872;
+  int steeringOffset = 2047-1892;
   // TODO: TUNE THE MAPPING, RESTING POINT ISNT EXACTLY IN THE MIDDLE
-  int mag_val = map(analogRead(THROTTLE_PIN), 0, 4095, -255, 255);
-  int dir_val = map(analogRead(STEERING_PIN), 0, 4095, -100, 100);
+  int mag_val = map(analogRead(THROTTLE_PIN)+throtleOffset, 0, 4095, -255, 255);
+  int dir_val = map(analogRead(STEERING_PIN)+steeringOffset, 0, 4095, -100, 100);
 
   int dc_right = _min(255, abs(mag_val + dir_val));
   int dc_left = _min(255, abs(mag_val - dir_val));
