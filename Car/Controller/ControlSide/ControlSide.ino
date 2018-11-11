@@ -69,16 +69,16 @@ void loop() {
   
   // Read the joystick values
   int mag_val = map(analogRead(THROTTLE_PIN) + THROTTLE_OFFSET, 0, 4095, -255, 255);
-  int max_steer = map(abs(mag_val), 0, 255, 80, 200);
+  int max_steer = map(abs(mag_val), 0, 255, 70, 120);
   int dir_val = map(analogRead(STEERING_PIN) + STEERING_OFFSET, 0, 4095, -max_steer, max_steer);
 
   // Calculate duty cycle values
-  int dc_right = _min(255, abs(mag_val + dir_val));
-  int dc_left = _min(255, abs(mag_val - dir_val));
+  int dc_right = _min(255, abs(mag_val - dir_val));
+  int dc_left = _min(255, abs(mag_val + dir_val));
 
   // Calculate individual motor directions
-  int dir_right = (mag_val + dir_val) > 0;
-  int dir_left = (mag_val - dir_val) > 0;
+  int dir_right = (mag_val - dir_val) < 0;
+  int dir_left = (mag_val + dir_val) < 0;
   
   // Write these bits to dirByte so it can be sent as single number
   bitWrite(dirByte, 0, 1);
