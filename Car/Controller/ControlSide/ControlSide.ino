@@ -66,10 +66,15 @@ void loop() {
 
   // Byte to hold rotation direction of each motor
   byte dirByte;
+  int max_steer;
   
   // Read the joystick values
   int mag_val = map(analogRead(THROTTLE_PIN) + THROTTLE_OFFSET, 0, 4095, -255, 255);
-  int max_steer = map(abs(mag_val), 0, 255, 70, 120);
+  if (abs(mag_val) < 10) {
+    max_steer = 80;
+  } else {
+    max_steer = map(abs(mag_val), 0, 255, 60, 110);
+  }
   int dir_val = map(analogRead(STEERING_PIN) + STEERING_OFFSET, 0, 4095, -max_steer, max_steer);
 
   // Calculate duty cycle values
