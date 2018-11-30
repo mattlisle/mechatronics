@@ -165,6 +165,7 @@ void sendPacket (int throttleIn, int steeringIn, byte dirIn, int baseIn, int arm
   memset(udpBuffer, 0, UDP_PACKET_SIZE); 
 
   // Load the buffer, maybe add one so theyre never zero?
+  //SEND 1 FIRST?
   udpBuffer[0] = throttleIn;
   udpBuffer[1] = steeringIn;
   udpBuffer[2] = dirIn;
