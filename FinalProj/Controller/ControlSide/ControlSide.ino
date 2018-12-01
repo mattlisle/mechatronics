@@ -17,6 +17,7 @@
 #define WEAPON_LR     39
 #define STEERING_PIN  35
 #define THROTTLE_PIN  32
+#define TEAM_PIN      18
 
 // WiFi
 #define LOCALPORT     2390
@@ -34,6 +35,9 @@ float UD_center = 2047 - WEAP_UD_OFFSET;
 float LR_center = 2047 - WEAP_LR_OFFSET;
 float x = UD_center;
 float y = LR_center;
+
+//Intialize Team Boolean, true is blue, false is red
+int teamIsBlue; 
 
 
 /* -------------------- Initialize LCD -------------------- */
@@ -62,6 +66,7 @@ void setup() {
   pinMode(WEAPON_LR,INPUT);
   pinMode(STEERING_PIN,INPUT);
   pinMode(THROTTLE_PIN,INPUT);
+  pinMode(TEAM_PIN, INPUT);
 
   // Serial
   Serial.begin(115200);
@@ -85,18 +90,21 @@ void setup() {
   }
   packetBuffer[UDP_PACKET_SIZE] = 0;
   display.clear();
+  
+  //display.setFont(ArialMT_Plain_16);
+  //display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.drawString(0, 0, "Connected");
+  display.drawString(0, 16, "to Wifi!");
+  display.display();
+  delay(1000);
+  display.clear();
   // Wair for the GO! message
   // Comment or uncomment based on use case
   //waitForGo();
 }
 
 void loop() {
-  display.setFont(ArialMT_Plain_16);
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.drawString(0, 0, "Connected");
-  display.drawString(0, 16, "to Wifi!");
-  display.display();
-  display.clear();
+  
   // Byte to hold rotation direction of each motor
   byte dirByte;
   int max_steer;
@@ -138,13 +146,17 @@ void loop() {
   Serial.print("   ");
   Serial.print(dc_left);
   Serial.print("   ");
+
+  //check team pin
+  teamIsBlue = digitalRead(TEAM_PIN);
   
   // Write these bits to dirByte so it can be sent as single number
   bitWrite(dirByte, 0, 1);
   bitWrite(dirByte, 1, dir_right);
   bitWrite(dirByte, 2, dir_left);
-  //TODO: add team switch input
-  //TODO: add in byte for team 
+  // did we blue ourselves?
+  bitWrite(dirByte, 3, teamIsBlue);
+  
   // Communicate 
   digitalWrite(LED_BUILTIN,HIGH);
   sendPacket(dc_right, dc_left, dirByte, basepos, armpos);
@@ -184,7 +196,7 @@ void sendPacket (int throttleIn, int steeringIn, byte dirIn, int baseIn, int arm
 /*******************************************************
  * Function: waitForGo
  * Sets go boolean once GO! message is received
- *******************************************************/
+
 void waitForGo(){
   while(1) {
     int cb = udp.parsePacket();
@@ -204,3 +216,4 @@ void waitForGo(){
     }
   }
 }
+ *******************************************************/
