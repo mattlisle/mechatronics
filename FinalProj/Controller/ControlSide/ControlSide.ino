@@ -178,11 +178,11 @@ void sendPacket (int throttleIn, int steeringIn, byte dirIn, int baseIn, int arm
 
   // Load the buffer, maybe add one so theyre never zero?
   //SEND 1 FIRST?
-  udpBuffer[0] = throttleIn;
-  udpBuffer[1] = steeringIn;
+  udpBuffer[0] = throttleIn+1;
+  udpBuffer[1] = steeringIn+1;
   udpBuffer[2] = dirIn;
-  udpBuffer[3] = baseIn;
-  udpBuffer[4] = armIn;
+  udpBuffer[3] = baseIn+1;
+  udpBuffer[4] = armIn+1;
   
   udp.beginPacket(ipTarget, REMOTEPORT);
 
