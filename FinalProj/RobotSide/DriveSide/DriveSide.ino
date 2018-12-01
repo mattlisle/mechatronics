@@ -8,6 +8,8 @@
 #include <SPI.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include <Servo.h>
+
 
 /* -------------------- Defines -------------------- */
 // Pins
@@ -43,8 +45,6 @@ int teamIsBlue;
 byte resolution = 8;
 byte left_channel = 1;
 byte right_channel = 2;
-byte base_channel = 3;
-byte arm_channel = 4;
 int freq = 200;
 
 // WiFi
@@ -55,6 +55,10 @@ IPAddress myIPaddress(192, 168, 1, 158);
 IPAddress ipTarget(192, 168, 1, 120);
 char udpBuffer[UDP_PACKET_SIZE];
 byte packetBuffer[UDP_PACKET_SIZE + 1];
+
+// Servos
+Servo baseServo;
+Servo armServo;
 
 
 /* -------------------- ISRs -------------------- */
@@ -74,17 +78,16 @@ void setup() {
   pinMode(H3A, OUTPUT);
   pinMode(H4A, OUTPUT);
 
+  // Attach servos
+  baseServo.attach(BASE_SERVO);
+  baseServo.attach(ARM_SERVO);
+
   // PWM for motors
   ledcSetup(left_channel, freq, resolution);
   ledcSetup(right_channel, freq, resolution);
   ledcAttachPin(EN1, left_channel);
   ledcAttachPin(EN3, right_channel);
 
-  // PWM for servos
-  ledcSetup(base_channel, freq, resolution);
-  ledcSetup(arm_channel, freq, resolution);
-  ledcAttachPin(BASE_SERVO, base_channel);
-  ledcAttachPin(ARM_SERVO, arm_channel);
 
   // WiFi
   WiFi.config(myIPaddress, IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
@@ -172,6 +175,7 @@ void controlMotors () {
   // Generate PWM signal based on supplied duty cycle
   ledcWrite(left_channel, dc_left);
   ledcWrite(right_channel, dc_right);
-  ledcWrite(base_channel, base_pos);
-  ledcWrite(arm_channel, arm_pos);
+  // Servos
+  baseServo.write(base_pos);
+  armServo.write(arm_pos);
 }
