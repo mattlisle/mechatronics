@@ -43,8 +43,8 @@ int teamIsBlue;
 
 // For setting up ledcChannel
 byte resolution = 8;
-byte left_channel = 1;
-byte right_channel = 2;
+byte left_channel = 3;
+byte right_channel = 4;
 int freq = 200;
 
 // WiFi

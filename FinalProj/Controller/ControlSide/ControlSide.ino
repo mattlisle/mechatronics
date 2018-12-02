@@ -25,12 +25,15 @@
 
 // Motor Calibration
 //TODO: UPDATE THESE VALUES
-#define THROTTLE_OFFSET 175
-#define STEERING_OFFSET 155
-#define WEAP_UD_OFFSET 175
-#define WEAP_LR_OFFSET 155
+#define THROTTLE_OFFSET 189
+#define STEERING_OFFSET 165
+#define WEAP_UD_OFFSET 227+60
+#define WEAP_LR_OFFSET 167-50
+//DECREASE this to make it more sensitive to joystick
+#define SENSITIVITY 100 
 
 //Initialize Joystick
+float throt_center = 2047 - STEERING_OFFSET;
 float UD_center = 2047 - WEAP_UD_OFFSET;
 float LR_center = 2047 - WEAP_LR_OFFSET;
 float x = UD_center;
@@ -42,8 +45,8 @@ int teamIsBlue;
 
 /* -------------------- Initialize LCD -------------------- */
 //SDA is 19
-//SCL is 22
-SH1106 display(0x3c, 19, 22); 
+//SCL is 21
+SH1106 display(0x3c, 19, 21); 
 
 /* -------------------- Global Varibales -------------------- */
 // WiFi
@@ -80,7 +83,7 @@ void setup() {
   display.drawString(0, 16, "to Wifi!");
   display.display();
   delay(2000);
-  // WiFi
+  //WiFi
   WiFi.config(myIPaddress, IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
   WiFi.begin(ssid, password);
   udp.begin(LOCALPORT);
@@ -89,10 +92,10 @@ void setup() {
     Serial.print(".");
   }
   packetBuffer[UDP_PACKET_SIZE] = 0;
-  display.clear();
   
-  //display.setFont(ArialMT_Plain_16);
-  //display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.clear();
+  display.setFont(ArialMT_Plain_16);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.drawString(0, 0, "Connected");
   display.drawString(0, 16, "to Wifi!");
   display.display();
@@ -104,19 +107,25 @@ void setup() {
 }
 
 void loop() {
+  display.setFont(ArialMT_Plain_16);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.drawString(0, 0, "Driving");
+  display.display();
   
   // Byte to hold rotation direction of each motor
   byte dirByte;
   int max_steer;
   
   // Read the joystick values
-  int mag_val = map(analogRead(THROTTLE_PIN) + THROTTLE_OFFSET, 0, 4095, -255, 255);
+  int throttleVal = analogRead(THROTTLE_PIN);
+  int mag_val = map(throttleVal + THROTTLE_OFFSET, 0, 4095, -255, 255);
   if (abs(mag_val) < 10) {
     max_steer = 80;
   } else {
     max_steer = map(abs(mag_val), 0, 255, 60, 110);
   }
-  int dir_val = map(analogRead(STEERING_PIN) + STEERING_OFFSET, 0, 4095, -max_steer, max_steer);
+  int steerVal = analogRead(STEERING_PIN);
+  int dir_val = map(steerVal + STEERING_OFFSET, 0, 4095, -max_steer, max_steer);
 
   // Calculate duty cycle values
   int dc_right = _min(255, abs(mag_val - dir_val));
@@ -130,25 +139,56 @@ void loop() {
   float weaponUD = analogRead(WEAPON_UD);
   float weaponLR = analogRead(WEAPON_LR);
 
+//  Serial.print(weaponLR);
+//  Serial.print("   ");
+//  Serial.print(weaponUD);
+//  Serial.print("   ");
+//  Serial.print(analogRead(THROTTLE_PIN));
+//  Serial.print("   ");
+//  Serial.print(analogRead(STEERING_PIN));
+//  Serial.println("   ");
+//  Serial.print("   ");
+  
   // Base and arm control
-  x = (weaponUD - UD_center) / 100 + x;
-  y = (weaponLR - LR_center) / 100 + y;
-
+  x = (weaponUD - UD_center) / SENSITIVITY + x;
+  y = (weaponLR - LR_center) / SENSITIVITY + y;
+  
   // Map values from 0 to 180 for servo
   int basepos = map(x, 0, 4095, 0, 180);
   int armpos = map(y, 0, 4095, 0, 180);
+  if(basepos>180) basepos = 180;
+  if(basepos<0) basepos = 0;
+  if(armpos>180)armpos = 180;
+  if(armpos<0) armpos = 0;
   // Debug printing
-  Serial.println(basepos);
+  Serial.print(weaponLR);
+  Serial.print("   ");
+  Serial.print(weaponUD);
+  Serial.print("   ");
+  Serial.print(basepos);
   Serial.print("   ");
   Serial.print(armpos);
   Serial.print("   ");
   Serial.print(dc_right);
   Serial.print("   ");
   Serial.print(dc_left);
+  Serial.println("   ");
   Serial.print("   ");
-
   //check team pin
   teamIsBlue = digitalRead(TEAM_PIN);
+  if(teamIsBlue){
+    display.drawString(0, 16, "Blue Team!");
+    display.display();
+  }
+  else{
+    display.drawString(0, 16, "Red Team!");
+    display.display();
+  }
+
+  // Show a little throttle meter
+  display.drawProgressBar(0, 50, 120, 10, abs(map(throttleVal-1600, 0, 3500, 0, 100)));
+  display.display();
+    
   
   // Write these bits to dirByte so it can be sent as single number
   bitWrite(dirByte, 0, 1);
@@ -162,6 +202,7 @@ void loop() {
   sendPacket(dc_right, dc_left, dirByte, basepos, armpos);
   digitalWrite(LED_BUILTIN,LOW);
   delay(50);
+  display.clear();
   
 }
 
