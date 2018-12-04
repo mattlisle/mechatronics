@@ -581,19 +581,6 @@ void loop() {
     }
       
 
-    // Check cooldown and see if we got a hit
-    // coolDownStatus, 1 if on cooldown, 0 if ready to hit
-    // TODO: impliment a cooldown time, for now just ignore it
-    // Hit will pull pin low -- did we hit em? Pull output low
-    if(!digitalRead(WEAPON_IN)){
-      hitLEDs();
-      digitalWrite(WEAPON_OUT, LOW);
-      //Serial.println("HIT");
-    }
-    else{
-      digitalWrite(WEAPON_OUT, HIGH);
-    }
-
     // If we've got a falling edge, need to check the frequency of the LED light
     byte healing_pin_state = digitalRead(HEALING_PIN);
     if (!healing_pin_state | healing_status) {
@@ -610,6 +597,19 @@ void loop() {
       digitalWrite(LED_BUILTIN,LOW);
       // If not healing show health normally
       ShowHealth(health); //set the LEDs for the health
+    }
+
+    // Check cooldown and see if we got a hit
+    // coolDownStatus, 1 if on cooldown, 0 if ready to hit
+    // TODO: impliment a cooldown time, for now just ignore it
+    // Hit will pull pin low -- did we hit em? Pull output low
+    if(!digitalRead(WEAPON_IN)){
+      hitLEDs();
+      digitalWrite(WEAPON_OUT, LOW);
+      //Serial.println("HIT");
+    }
+    else{
+      digitalWrite(WEAPON_OUT, HIGH);
     }
        
     FastLEDshowESP32(); //Actually send the values to the ring
