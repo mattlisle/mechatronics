@@ -9,7 +9,7 @@
 #define LED_BUILTIN 2
 
 // Healing light constants
-#define TIMER_COUNTS 800000
+#define TIMER_COUNTS 400000
 #define PRESCALER 10
 #define MIN230 (80000000 / (PRESCALER * (230 + 50)))
 #define MAX230 (80000000 / (PRESCALER * (230 - 50)))
@@ -83,35 +83,52 @@ void loop() {
 /* -------------------- Functions -------------------- */
 
 /*******************************************************
- * Function: readPacket
- * Reads packet from Controller into dc and dir variables
+ * Function: get_healing_status
+ * Output: boolean value indicating if we're healing
  *******************************************************/
 byte get_healing_status() {
-  byte num_periods = 0;
+//  byte num_periods = 0;
   int last_state;
   byte this_state;
   int this_adc;
   int adc_val;
   long period = 0;
+  int period_counts[100];
+  int this_period_counts = 0;
+  byte valid_periods_230 = 0;
+  byte valid_periods_1600 = 0;
+  long total_counts = 1;
   byte result = 0;
-  long loops_total = 0;
-  
+
+  // Forces second while loop to break unless we detect more than 1 period
+  period_counts[1] = 0;
+    
   // Wait for the beginning of the next timer loop
   Serial.println("Begin");
-  times_up = LOW;
   timerAlarmEnable(timer);
 
   // Get our initial state
   last_state = digitalRead(HEALING_PIN);
 
   // Loop until the interrupt fires
+  byte i = 0;
+  times_up = LOW;
   while(!times_up) {
     this_state = digitalRead(HEALING_PIN);
+    this_period_counts += 1;
+    total_counts += 1;
 
     // Add the number of rising edges over time
     if (this_state) {
       if (!last_state) {
-        num_periods += 1;
+        
+        // If we've seen more than 100, we have noise, ignore subsequent edges
+        if (i < 100) {
+          // Save the counts of the period and start over
+          period_counts[i] = this_period_counts;
+          this_period_counts = 0;
+          i++;
+        }
       }
     }
     last_state = this_state;
@@ -121,25 +138,33 @@ byte get_healing_status() {
   timerAlarmDisable(timer);
   times_up = LOW;
 
-  // Calculate the number of counts per period we saw
-  if (num_periods) {
-    period = TIMER_COUNTS / (num_periods);
-  } else {
-    period = TIMER_COUNTS;
+  // Iterate through the periods detected and convert them to timer values
+  // Then compare those values to the min and max constants for each frequency
+  // If the frequency is either 1600 or 230, save it
+  byte j = 0;
+  period_counts[99] = 0;
+  while (1) {
+    period = period_counts[j] * TIMER_COUNTS / total_counts;
+    if (!period) {
+      break;
+    }
+    if ((period > MIN230) & (period < MAX230)) {
+      valid_periods_230 += 1;
+    } 
+    if ((period > MIN1600) & (period < MAX1600)) {
+      valid_periods_1600 += 1;
+    } 
+    j++;
   }
 
-  // See if it falls into acceptable range
-  if ( ((period > MIN230) & (period < MAX230)) | ((period > MIN1600) & (period < MAX1600)) ) {
+  // If we have a lot of one frequency and no more than one occurrence of the other, we're healing
+  if ((valid_periods_230 > 8) & (valid_periods_1600 < 2)) {
+    result = 1;
+  } else if ((valid_periods_230 < 2) & (valid_periods_1600 > 20)) {
     result = 1;
   } else {
-    result = 0; 
+    result = 0;
   }
 
-  // Debugging
-  Serial.print("Period Detected: ");
-  Serial.println(period);
-  Serial.print("Result: ");
-  Serial.println(result);
-  
   return result;
 }
