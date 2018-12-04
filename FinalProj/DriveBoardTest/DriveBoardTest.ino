@@ -1,16 +1,18 @@
-#include <Servo.h>
+#include <ESPServo.h>
+
+//#include <Servo.h>
 
 #define PWM1 13
 #define PWM2 12
 #define DIR1 14
 #define DIR2 27
 
-static const int servoPin = 26;
+static const int servoPin = 25;
 
 // For setting up ledcChannel
 byte resolution = 8;
-byte left_channel = 2;
-byte right_channel = 3;
+byte left_channel = 9;
+byte right_channel = 10;
 int freq = 200;
 
 byte dc_left[4] = {0, 100, 100, 0};

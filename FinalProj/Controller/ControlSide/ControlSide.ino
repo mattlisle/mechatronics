@@ -13,8 +13,8 @@
 /* -------------------- Defines -------------------- */
 // Pins
 #define LED_BUILTIN   2
-#define WEAPON_UD     39
-#define WEAPON_LR     34
+#define WEAPON_UD     34
+#define WEAPON_LR     39
 #define STEERING_PIN  36
 #define THROTTLE_PIN  33
 #define TEAM_PIN      18
@@ -27,8 +27,8 @@
 //TODO: UPDATE THESE VALUES
 #define THROTTLE_OFFSET 189
 #define STEERING_OFFSET 165
-#define WEAP_UD_OFFSET 227+60
-#define WEAP_LR_OFFSET 167-50
+#define WEAP_UD_OFFSET 219
+#define WEAP_LR_OFFSET 271
 //DECREASE this to make it more sensitive to joystick
 #define SENSITIVITY 10 
 int maxMapVal = 1000;
@@ -51,10 +51,10 @@ SH1106 display(0x3c, 19, 21);
 
 /* -------------------- Global Varibales -------------------- */
 // WiFi
-//const char* ssid = "Mechatronics";
-//const char* password = "YayFunFun";
-const char* ssid = "iPhoneHotspot";
-const char* password = "sexpanther";
+const char* ssid = "Mechatronics";
+const char* password = "YayFunFun";
+//const char* ssid = "iPhoneHotspot";
+//const char* password = "sexpanther";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 120);
 IPAddress ipTarget(192, 168, 1, 158);
@@ -171,9 +171,9 @@ void loop() {
   if(armpos>180)armpos = 180;
   if(armpos<0) armpos = 0;
   // Debug printing
-  Serial.print(weaponUD - UD_center);
+  Serial.print(weaponUD-UD_center);
   Serial.print("   ");
-  Serial.print(weaponLR - LR_center);
+  Serial.print(weaponLR-LR_center);
   Serial.print("   ");
   Serial.print(basepos);
   Serial.print("   ");

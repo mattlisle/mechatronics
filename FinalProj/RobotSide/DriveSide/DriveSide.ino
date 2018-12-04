@@ -25,6 +25,7 @@ FASTLED_USING_NAMESPACE
 #define RED 0xFF0000          // color for the red team
 #define BLUE 0x0000FF         // color for the blue team
 #define HEALTHCOLOR 0x00FF00  // color for the health LEDs
+#define WHITECOLOR 0xFFFFFF  // color of white for healing
 #define FLASHHALFPERIOD 250   // the blue team is supposed to flash this is half of the period of that flash
 #define READPERIOD 400        // Slows down the I2C
 
@@ -91,6 +92,18 @@ static TaskHandle_t userTaskHandle = 0;
 //Weapon Pins
 #define WEAPON_IN 39
 #define WEAPON_OUT 19
+
+// Pins
+#define HEALING_PIN 36
+
+// Healing light constants
+#define TIMER_COUNTS 400000
+#define PRESCALER 10
+#define MIN230 (80000000 / (PRESCALER * (230 + 50)))
+#define MAX230 (80000000 / (PRESCALER * (230 - 50)))
+#define MIN1600 (80000000 / (PRESCALER * (1600 + 50)))
+#define MAX1600 (80000000 / (PRESCALER * (1600 - 50)))
+
 // Wifi
 #define LOCALPORT       2800
 #define REMOTEPORT      2801
@@ -114,11 +127,18 @@ byte left_channel = 9;
 byte right_channel = 10;
 int freq = 200;
 
+// Timer
+hw_timer_t * timer = NULL;
+
+// Healing
+volatile byte times_up = LOW;
+byte healing_status = 0;
+
 // WiFi
-//const char* ssid = "Mechatronics";
-//const char* password = "YayFunFun";
-const char* ssid = "iPhoneHotspot";
-const char* password = "sexpanther";
+const char* ssid = "Mechatronics";
+const char* password = "YayFunFun";
+//const char* ssid = "iPhoneHotspot";
+//const char* password = "sexpanther";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 158);
 IPAddress ipTarget(192, 168, 1, 120);
@@ -129,6 +149,14 @@ byte packetBuffer[UDP_PACKET_SIZE + 1];
 Servo baseServo;
 Servo armServo;
 
+/* -------------------- ISRs -------------------- */
+/***********************************
+ * Function: IRAM_ATTR
+ * ISR for LED state control
+ ***********************************/
+void IRAM_ATTR onTimer(){
+  times_up = HIGH;
+}
 
 /* -------------------- Functions -------------------- */
 // I2C FXN STUFF===========================================
@@ -418,10 +446,17 @@ void setup() {
   // Weapon pins
   pinMode(WEAPON_IN, INPUT);
   pinMode(WEAPON_OUT, OUTPUT);
+  // Healing
+  pinMode(HEALING_PIN, INPUT);
+  // Healing Timer setup
+  timer = timerBegin(0, PRESCALER, true);
+  timerAttachInterrupt(timer, &onTimer, true);
+  timerAlarmWrite(timer, TIMER_COUNTS, true);
+
 
   // Attach servos
   baseServo.attach(BASE_SERVO);
-  baseServo.attach(ARM_SERVO);
+  armServo.attach(ARM_SERVO);
 
   // PWM for motors
   ledcSetup(left_channel, freq, resolution);
@@ -457,24 +492,24 @@ void loop() {
     static byte healthNexus[4];      // health of the two nexi each is 10 bit (Red L, H, Blue L, H)
     static byte towerStatus[2];      // status of the two towers.  Not sure why this needs 4 bits each.
   
-    static byte healingFreq = 0;  // First bit is for the low frequency (1), the second bit is for the high frequency (2), zero can be sent to the hat to request the information.
+    static byte healingFreq;  // First bit is for the low frequency (1), the second bit is for the high frequency (2), zero can be sent to the hat to request the information.
     
     // I2C STUFF===========================================
     if ((currentTime - READPERIOD) >= readTime){  //if we haven't read for the correct amount of time we can do it now.
         readTime=currentTime;  // update when we last read
         // TODO: change the healingFreq value
-        switch (healingFreq) { 
-          //  This just cycles through the different information we can send, students should make it approriate to what they are sensing     
-          case 0:
-            healingFreq = 1;  //the low frequency is present
-            break;
-          case 1:
-            healingFreq = 2;  // the high freq. is present
-            break;
-          case 2:
-            healingFreq = 0;  // no healing but data requested
-            break;
-        }
+//        switch (healingFreq) { 
+//          //  This just cycles through the different information we can send, students should make it approriate to what they are sensing     
+//          case 0:
+//            healingFreq = 1;  //the low frequency is present
+//            break;
+//          case 1:
+//            healingFreq = 2;  // the high freq. is present
+//            break;
+//          case 2:
+//            healingFreq = 0;  // no healing but data requested
+//            break;
+//        }
         data_wr[0]=healingFreq;  // put the healing information into the buffer
         i2c_write_test();       // write the buffer
         //delay(1);
@@ -523,35 +558,63 @@ void loop() {
     // send the 'leds' array out to the actual LED strip
     ShowRobotNum();  // set the LEDs for the robot number
     health = healthRobot[ROBOTNUM-1+(teamIsBlue)*4];  // Get the position based on the robot number it is zero indexed so we need to lower everything by 1, if it is a blue robot we need to start after the read robots
-    ShowHealth(health); //set the LEDs for the health
+    
     if (0 == health){  // If we are dead turn off the lights.
       clearLEDs();
     }
     Serial.print("health: "); 
     Serial.println(health);
+
+    // TODO: uncomment/comment this delay?
+    // SMALL BUG: due to uncommenting this line 
+    // the ESP must be rebooted when team is switches
+    //delay(FLASHHALFPERIOD/2);  // wait a bit so the LEDs don't cycle to fast
     
-    delay(FLASHHALFPERIOD/2);  // wait a bit so the LEDs don't cycle to fast
-    FastLEDshowESP32(); //Actually send the values to the ring
-    
-    FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
     //END LED STUFF++++++++++++++++++++++++++++++++++++++++
       
     // Read the packet sent by the controller
     readPacket();
     
-    // Use values in packet to control motors
-    controlMotors();
+    // Use values in packet to control motors, but only if we stayin alive
+    if(health){
+      controlMotors();
+    }
+      
 
     // Check cooldown and see if we got a hit
     // coolDownStatus, 1 if on cooldown, 0 if ready to hit
     // TODO: impliment a cooldown time, for now just ignore it
     // Hit will pull pin low -- did we hit em? Pull output low
     if(!digitalRead(WEAPON_IN)){
+      hitLEDs();
       digitalWrite(WEAPON_OUT, LOW);
+      //Serial.println("HIT");
     }
     else{
       digitalWrite(WEAPON_OUT, HIGH);
     }
+
+    // If we've got a falling edge, need to check the frequency of the LED light
+    byte healing_pin_state = digitalRead(HEALING_PIN);
+    if (!healing_pin_state | healing_status) {
+      healing_status = get_healing_status();
+      // Set healingFreq
+      healingFreq = healing_status;
+    }
+    if (healing_status) {
+      // Set neopixel
+      digitalWrite(LED_BUILTIN,HIGH);
+      healLEDs(health);
+    } 
+    else{
+      digitalWrite(LED_BUILTIN,LOW);
+      // If not healing show health normally
+      ShowHealth(health); //set the LEDs for the health
+    }
+       
+    FastLEDshowESP32(); //Actually send the values to the ring
+    
+    FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
     
 }
 
@@ -620,6 +683,135 @@ void controlMotors () {
   ledcWrite(left_channel, dc_left);
   ledcWrite(right_channel, dc_right);
   // Servos
-  baseServo.write(base_pos);
+  // Base is reversed 
+  baseServo.write(180-base_pos);
   armServo.write(arm_pos);
+}
+
+/*******************************************************
+ * Function: hitLEDs
+ * Flashes LEDs with our team color for a moment
+ *******************************************************/
+void hitLEDs(void){
+  for(int i=0; i<NUM_LEDS; i++){
+    leds[i] = TEAMCOLOR; // Turn on everything
+    //delay(50); 
+  }
+}
+
+/*******************************************************
+ * Function: healLEDs
+ * Flashes LEDs with our white while healing
+ *******************************************************/
+void healLEDs(int health){
+  for(int i=0; i<NUM_LEDS; i++){
+    //TODO TEST PULSING WHITE LED WHILE HEALING
+    int healthLeds[] = {1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,20,21,22,23}; // the location of the 24 LEDs used for health
+    int flashTime = millis(); // what time is it
+    static int flashTimeOld = 0; // when was the last toggle
+    static bool ledsOn = 1;  // are the robot number LEDs on
+    
+    leds[healthLeds[0]] = WHITECOLOR*(health > 0);  // last LED doesn't go off till the health is 0
+    leds[healthLeds[19]] = WHITECOLOR*(health == 100);  // first LED goes off as soon as the health is not 100
+    if ((flashTime-FLASHHALFPERIOD*2) > flashTimeOld){ // if the correct amount of time has passed toggle the robot number LEDs
+      if (ledsOn){  // if they are on turn them off
+        ledsOn = 0;
+      }
+      else {  // if they are off turn them on
+        ledsOn = 1; 
+      }
+      flashTimeOld = flashTime;   //store when we changed the state
+    }
+    for(int i=1; i<19; i++){
+      leds[healthLeds[i]] = WHITECOLOR*(health > (i*5))*ledsOn;  // the other leds go off in increments of 5
+    }
+    //delay(50); 
+  }
+}
+
+/*******************************************************
+ * Function: get_healing_status
+ * Output: boolean value indicating if we're healing
+ *******************************************************/
+byte get_healing_status() {
+//  byte num_periods = 0;
+  int last_state;
+  byte this_state;
+  int this_adc;
+  int adc_val;
+  long period = 0;
+  int period_counts[100];
+  int this_period_counts = 0;
+  byte valid_periods_230 = 0;
+  byte valid_periods_1600 = 0;
+  long total_counts = 1;
+  byte result = 0;
+
+  // Forces second while loop to break unless we detect more than 1 period
+  period_counts[1] = 0;
+    
+  // Wait for the beginning of the next timer loop
+  Serial.println("Begin");
+  timerAlarmEnable(timer);
+
+  // Get our initial state
+  last_state = digitalRead(HEALING_PIN);
+
+  // Loop until the interrupt fires
+  byte i = 0;
+  times_up = LOW;
+  while(!times_up) {
+    this_state = digitalRead(HEALING_PIN);
+    this_period_counts += 1;
+    total_counts += 1;
+
+    // Add the number of rising edges over time
+    if (this_state) {
+      if (!last_state) {
+        
+        // If we've seen more than 100, we have noise, ignore subsequent edges
+        if (i < 100) {
+          // Save the counts of the period and start over
+          period_counts[i] = this_period_counts;
+          this_period_counts = 0;
+          i++;
+        }
+      }
+    }
+    last_state = this_state;
+  }
+
+  // Turn off the timer
+  timerAlarmDisable(timer);
+  times_up = LOW;
+
+  // Iterate through the periods detected and convert them to timer values
+  // Then compare those values to the min and max constants for each frequency
+  // If the frequency is either 1600 or 230, save it
+  byte j = 0;
+  period_counts[99] = 0;
+  while (1) {
+    period = period_counts[j] * TIMER_COUNTS / total_counts;
+    if (!period) {
+      break;
+    }
+    if ((period > MIN230) & (period < MAX230)) {
+      valid_periods_230 += 1;
+    } 
+    if ((period > MIN1600) & (period < MAX1600)) {
+      valid_periods_1600 += 1;
+    } 
+    j++;
+  }
+
+  // If we have a lot of one frequency and no more than one occurrence of the other, we're healing
+  if ((valid_periods_230 > 8) & (valid_periods_1600 < 2)) {
+    result = 1;
+  } else if ((valid_periods_230 < 2) & (valid_periods_1600 > 20)) {
+    result = 2;
+  } else {
+    result = 0;
+  }
+
+  return result;
 }

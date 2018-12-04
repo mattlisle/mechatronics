@@ -48,10 +48,10 @@ byte right_channel = 10;
 int freq = 200;
 
 // WiFi
-//const char* ssid = "Mechatronics";
-//const char* password = "YayFunFun";
-const char* ssid = "iPhoneHotspot";
-const char* password = "sexpanther";
+const char* ssid = "Mechatronics";
+const char* password = "YayFunFun";
+//const char* ssid = "iPhoneHotspot";
+//const char* password = "sexpanther";
 WiFiUDP udp;
 IPAddress myIPaddress(192, 168, 1, 158);
 IPAddress ipTarget(192, 168, 1, 120);
@@ -80,7 +80,7 @@ void setup() {
  
   // Attach servos
   baseServo.attach(BASE_SERVO);
-  baseServo.attach(ARM_SERVO);
+  armServo.attach(ARM_SERVO);
   
   // PWM
   ledcSetup(left_channel, freq, resolution);
