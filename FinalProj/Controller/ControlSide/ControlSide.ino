@@ -13,10 +13,10 @@
 /* -------------------- Defines -------------------- */
 // Pins
 #define LED_BUILTIN   2
-#define WEAPON_UD     34
-#define WEAPON_LR     39
-#define STEERING_PIN  35
-#define THROTTLE_PIN  32
+#define WEAPON_UD     39
+#define WEAPON_LR     34
+#define STEERING_PIN  36
+#define THROTTLE_PIN  33
 #define TEAM_PIN      18
 
 // WiFi
@@ -30,14 +30,15 @@
 #define WEAP_UD_OFFSET 227+60
 #define WEAP_LR_OFFSET 167-50
 //DECREASE this to make it more sensitive to joystick
-#define SENSITIVITY 100 
+#define SENSITIVITY 10 
+int maxMapVal = 1000;
 
 //Initialize Joystick
 float throt_center = 2047 - STEERING_OFFSET;
 float UD_center = 2047 - WEAP_UD_OFFSET;
 float LR_center = 2047 - WEAP_LR_OFFSET;
-float x = UD_center;
-float y = LR_center;
+float x = maxMapVal/2;
+float y = maxMapVal/2;
 
 //Intialize Team Boolean, true is blue, false is red
 int teamIsBlue; 
@@ -107,7 +108,7 @@ void setup() {
 }
 
 void loop() {
-  display.setFont(ArialMT_Plain_16);
+  display.setFont(ArialMT_Plain_10);
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.drawString(0, 0, "Driving");
   display.display();
@@ -150,20 +151,29 @@ void loop() {
 //  Serial.print("   ");
   
   // Base and arm control
-  x = (weaponUD - UD_center) / SENSITIVITY + x;
-  y = (weaponLR - LR_center) / SENSITIVITY + y;
+  // Dead bands
+  if(abs(weaponUD - UD_center)>70){
+    x = (weaponUD - UD_center) / SENSITIVITY + x;
+  }
+  if(abs(weaponLR - LR_center)>70){
+    y = (weaponLR - LR_center) / SENSITIVITY + y;
+  }
   
+  if(x>maxMapVal) x = maxMapVal;
+  if(x<0) x = 0;
+  if(y>maxMapVal) y = maxMapVal;
+  if(y<0) y = 0;
   // Map values from 0 to 180 for servo
-  int basepos = map(x, 0, 4095, 0, 180);
-  int armpos = map(y, 0, 4095, 0, 180);
+  int basepos = map(x, 0, maxMapVal, 0, 180);
+  int armpos = map(y, 0, maxMapVal, 0, 180);
   if(basepos>180) basepos = 180;
   if(basepos<0) basepos = 0;
   if(armpos>180)armpos = 180;
   if(armpos<0) armpos = 0;
   // Debug printing
-  Serial.print(weaponLR);
+  Serial.print(weaponUD - UD_center);
   Serial.print("   ");
-  Serial.print(weaponUD);
+  Serial.print(weaponLR - LR_center);
   Serial.print("   ");
   Serial.print(basepos);
   Serial.print("   ");
@@ -177,15 +187,18 @@ void loop() {
   //check team pin
   teamIsBlue = digitalRead(TEAM_PIN);
   if(teamIsBlue){
-    display.drawString(0, 16, "Blue Team!");
-    display.display();
+    display.drawString(0, 12, "Blue Team!");
+    
   }
   else{
-    display.drawString(0, 16, "Red Team!");
-    display.display();
+    display.drawString(0, 12, "Red Team!");
+    
   }
-
+  display.display();
   // Show a little throttle meter
+  display.drawRect(90,0,10,30);
+  display.fillRect(90,0,10,map(armpos, 0, 180, 30,0));
+  display.drawProgressBar(60,35,60,10,map(basepos,0,180,0,100));
   display.drawProgressBar(0, 50, 120, 10, abs(map(throttleVal-1600, 0, 3500, 0, 100)));
   display.display();
     

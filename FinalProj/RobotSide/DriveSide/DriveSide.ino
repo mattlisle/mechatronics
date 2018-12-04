@@ -21,7 +21,7 @@ long int TEAMCOLOR;
 #include "FastLED.h"
 FASTLED_USING_NAMESPACE
 
-#define ROBOTNUM 1            // robot number
+#define ROBOTNUM 2            // robot number
 #define RED 0xFF0000          // color for the red team
 #define BLUE 0x0000FF         // color for the blue team
 #define HEALTHCOLOR 0x00FF00  // color for the health LEDs
@@ -31,8 +31,8 @@ FASTLED_USING_NAMESPACE
 #if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
 #warning "Requires FastLED 3.1 or later; check github for latest code."
 #endif
-
-#define DATA_PIN    12  //What pin is the LED ring data on
+//TODO: CONFIRM DATA PIN
+#define DATA_PIN    18  //What pin is the LED ring data on
 #define LED_TYPE    WS2812  //APA102
 #define COLOR_ORDER GRB  // changes the order so we can use standard RGB for the values we set.
 #define NUM_LEDS    24  //Number of LEDs in the ring
@@ -58,9 +58,9 @@ static TaskHandle_t userTaskHandle = 0;
 #define W_LENGTH 1                /*!< Data length for w, [0,DATA_LENGTH] */
 #define R_LENGTH 16               /*!< Data length for r, [0,DATA_LENGTH] */
 
-
-#define I2C_MASTER_SCL_IO (gpio_num_t)33             /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO (gpio_num_t)25               /*!< gpio number for I2C master data  */
+// TODO: double check these are correct
+#define I2C_MASTER_SCL_IO (gpio_num_t)22             /*!< gpio number for I2C master clock */
+#define I2C_MASTER_SDA_IO (gpio_num_t)21               /*!< gpio number for I2C master data  */
 #define I2C_MASTER_NUM I2C_NUMBER(1) /*!< I2C port number for master dev */
 #define I2C_MASTER_FREQ_HZ 100000        /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE 0                           /*!< I2C master doesn't need buffer */
@@ -79,17 +79,18 @@ static TaskHandle_t userTaskHandle = 0;
 
 /* -------------------- OUR Defines -------------------- */
 // Pins
-#define LED_BUILTIN   2
+#define LED_BUILTIN  2
 #define EN1   13
-#define H1A   12
-#define H2A   14
-#define EN3   25
-#define H3A   27  
-#define H4A   26
-#define BASE_SERVO 17 //TODO ADD PINS HERE
-#define ARM_SERVO 16 //TODO ADD PINS HERE
-
-
+#define EN3   12
+// direction of zero is backwards in both cases
+#define DIR1  14
+#define DIR2  27
+//Servo pins
+#define BASE_SERVO 25 //TODO ADD PINS HERE
+#define ARM_SERVO 26 //TODO ADD PINS HERE
+//Weapon Pins
+#define WEAPON_IN 39
+#define WEAPON_OUT 19
 // Wifi
 #define LOCALPORT       2800
 #define REMOTEPORT      2801
@@ -411,11 +412,12 @@ void setup() {
   
   // Pins
   pinMode(EN1, OUTPUT);
-  pinMode(H1A, OUTPUT);
-  pinMode(H2A, OUTPUT);
+  pinMode(DIR1, OUTPUT);
+  pinMode(DIR2, OUTPUT);
   pinMode(EN3, OUTPUT);
-  pinMode(H3A, OUTPUT);
-  pinMode(H4A, OUTPUT);
+  // Weapon pins
+  pinMode(WEAPON_IN, INPUT);
+  pinMode(WEAPON_OUT, OUTPUT);
 
   // Attach servos
   baseServo.attach(BASE_SERVO);
@@ -460,7 +462,9 @@ void loop() {
     // I2C STUFF===========================================
     if ((currentTime - READPERIOD) >= readTime){  //if we haven't read for the correct amount of time we can do it now.
         readTime=currentTime;  // update when we last read
-        switch (healingFreq) {  //  This just cycles through the different information we can send, students should make it approriate to what they are sensing
+        // TODO: change the healingFreq value
+        switch (healingFreq) { 
+          //  This just cycles through the different information we can send, students should make it approriate to what they are sensing     
           case 0:
             healingFreq = 1;  //the low frequency is present
             break;
@@ -537,6 +541,18 @@ void loop() {
     
     // Use values in packet to control motors
     controlMotors();
+
+    // Check cooldown and see if we got a hit
+    // coolDownStatus, 1 if on cooldown, 0 if ready to hit
+    // TODO: impliment a cooldown time, for now just ignore it
+    // Hit will pull pin low -- did we hit em? Pull output low
+    if(!digitalRead(WEAPON_IN)){
+      digitalWrite(WEAPON_OUT, LOW);
+    }
+    else{
+      digitalWrite(WEAPON_OUT, HIGH);
+    }
+    
 }
 
 
@@ -570,13 +586,6 @@ void readPacket () {
     dir_right = bitRead(dir, 1);
     dir_left = bitRead(dir,2);
     teamIsBlue = bitRead(dir,3);
-
-//    if(teamIsBlue){
-//      TEAMCOLOR = "BLUE";
-//    }
-//    else{
-//      TEAMCOLOR = "RED";
-//    }
     
 
   }
@@ -594,20 +603,17 @@ void readPacket () {
 void controlMotors () {
 
   // Set and clear H-bridge pins to control direction
-  //TODO MODIFY THESE TO TAKE INVERTERS INTO ACCOUNT
+  // Set and clear H-bridge pins to control direction
   if (dir_left) {
-    digitalWrite(H1A, LOW);
-    digitalWrite(H2A, HIGH);
+    digitalWrite(DIR1, LOW);
   } else {
-    digitalWrite(H2A, LOW);
-    digitalWrite(H1A, HIGH);
+    digitalWrite(DIR1, HIGH);
+    
   }
   if (dir_right) {
-    digitalWrite(H3A, LOW);
-    digitalWrite(H4A, HIGH);
+    digitalWrite(DIR2, LOW);
   } else {
-    digitalWrite(H4A, LOW);
-    digitalWrite(H3A, HIGH);
+    digitalWrite(DIR2, HIGH);
   }
 
   // Generate PWM signal based on supplied duty cycle
