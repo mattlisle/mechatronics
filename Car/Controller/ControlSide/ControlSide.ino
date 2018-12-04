@@ -59,7 +59,7 @@ void setup() {
   packetBuffer[UDP_PACKET_SIZE] = 0;
 
   // Wair for the GO! message
-  waitForGo();
+//  waitForGo();
 }
 
 void loop() {
