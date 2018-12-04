@@ -128,7 +128,7 @@ byte right_channel = 10;
 int freq = 200;
 
 // Timer
-hw_timer_t * timer = NULL;
+//hw_timer_t * timer = NULL;
 
 // Healing
 volatile byte times_up = LOW;
@@ -449,9 +449,9 @@ void setup() {
   // Healing
   pinMode(HEALING_PIN, INPUT);
   // Healing Timer setup
-  timer = timerBegin(0, PRESCALER, true);
-  timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, TIMER_COUNTS, true);
+//  timer = timerBegin(2, PRESCALER, true); // changed this to timer 2
+//  timerAttachInterrupt(timer, &onTimer, true);
+//  timerAlarmWrite(timer, TIMER_COUNTS, true);
 
 
   // Attach servos
@@ -583,8 +583,12 @@ void loop() {
 
     // If we've got a falling edge, need to check the frequency of the LED light
     byte healing_pin_state = digitalRead(HEALING_PIN);
-    if (!healing_pin_state | healing_status) {
+    Serial.print("Healing Status: ");
+    Serial.println(healing_status);
+    if ((!healing_pin_state) | (healing_status)) {
       healing_status = get_healing_status();
+      Serial.print("Healing Status after Checking: ");
+      Serial.println(healing_status);
       // Set healingFreq
       healingFreq = healing_status;
     }
@@ -745,22 +749,26 @@ byte get_healing_status() {
   byte valid_periods_230 = 0;
   byte valid_periods_1600 = 0;
   long total_counts = 1;
-  byte result = 0;
+  int start_time;
+  int this_time;
+  static byte result;  // Changed this to static byte
 
   // Forces second while loop to break unless we detect more than 1 period
   period_counts[1] = 0;
     
   // Wait for the beginning of the next timer loop
-  Serial.println("Begin");
-  timerAlarmEnable(timer);
+//  timerAlarmEnable(timer);
 
   // Get our initial state
   last_state = digitalRead(HEALING_PIN);
 
   // Loop until the interrupt fires
   byte i = 0;
-  times_up = LOW;
-  while(!times_up) {
+  start_time = millis();
+  this_time = millis();
+//  times_up = LOW;
+//  while(!times_up) {
+  while (this_time - start_time <= 50) {
     this_state = digitalRead(HEALING_PIN);
     this_period_counts += 1;
     total_counts += 1;
@@ -779,11 +787,13 @@ byte get_healing_status() {
       }
     }
     last_state = this_state;
+    this_time = millis();
   }
-
+  Serial.print("Time elapsed for measuring health: ")
+  Serial.println(this_time - start_time);
   // Turn off the timer
-  timerAlarmDisable(timer);
-  times_up = LOW;
+//  timerAlarmDisable(timer);
+//  times_up = LOW;
 
   // Iterate through the periods detected and convert them to timer values
   // Then compare those values to the min and max constants for each frequency
