@@ -121,9 +121,9 @@ void loop() {
   int throttleVal = analogRead(THROTTLE_PIN);
   int mag_val = map(throttleVal + THROTTLE_OFFSET, 0, 4095, -255, 255);
   if (abs(mag_val) < 10) {
-    max_steer = 120;
+    max_steer = 180;
   } else {
-    max_steer = map(abs(mag_val), 0, 255, 100, 160);
+    max_steer = map(abs(mag_val), 0, 255, 140, 200);
   }
   int steerVal = analogRead(STEERING_PIN);
   int dir_val = map(steerVal + STEERING_OFFSET, 0, 4095, -max_steer, max_steer);
@@ -168,7 +168,7 @@ void loop() {
   int armpos = map(y, 0, maxMapVal, 0, 180);
   if(basepos>180) basepos = 180;
   if(basepos<0) basepos = 0;
-  if(armpos>180)armpos = 180;
+  if(armpos>90)armpos = 90;
   if(armpos<0) armpos = 0;
   // Debug printing
   Serial.print(weaponUD-UD_center);

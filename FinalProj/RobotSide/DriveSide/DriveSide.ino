@@ -13,7 +13,7 @@
 #include <ESPServo.h>
 #include <stdio.h>
 #include "esp_log.h"
-#include "driver/i2c.h" 
+#include "driver/i2c.h"
 #include "sdkconfig.h"
 
 //LED DEFINE STUFF++++++++++++++++++++++++++++++++++++++++
@@ -376,7 +376,7 @@ void ShowRobotNum(void){
   
   leds[robotLeds[0]]=TEAMCOLOR*ledsOn;  // The first LED is always displayed with the robot color
   
-
+  // can comment this all out based on our robot number, which wont change
   switch (ROBOTNUM){  //Change the LEDs based on the robot number
   case 1:
     leds[robotLeds[1]]=0;
@@ -498,7 +498,19 @@ void loop() {
     // I2C STUFF===========================================
     if ((currentTime - READPERIOD) >= readTime){  //if we haven't read for the correct amount of time we can do it now.
         readTime=currentTime;  // update when we last read
-        
+        // TODO: change the healingFreq value
+//        switch (healingFreq) { 
+//          //  This just cycles through the different information we can send, students should make it approriate to what they are sensing     
+//          case 0:
+//            healingFreq = 1;  //the low frequency is present
+//            break;
+//          case 1:
+//            healingFreq = 2;  // the high freq. is present
+//            break;
+//          case 2:
+//            healingFreq = 0;  // no healing but data requested
+//            break;
+//        }
         data_wr[0]=healingFreq;  // put the healing information into the buffer
         i2c_write_test();       // write the buffer
         //delay(1);
@@ -551,8 +563,8 @@ void loop() {
     if (0 == health){  // If we are dead turn off the lights.
       clearLEDs();
     }
-//    Serial.print("health: "); 
-//    Serial.println(health);
+    Serial.print("health: "); 
+    Serial.println(health);
 
     // TODO: uncomment/comment this delay?
     // SMALL BUG: due to uncommenting this line 
@@ -564,18 +576,21 @@ void loop() {
     // Read the packet sent by the controller
     readPacket();
     
-    // Use values in packet to control motors, but only if we stayin alive
-    if(health){
+    // Use values in packet to control motors
+    // but only if we stayin alive and not in automode and gameStatus
+    if((health) & (!autoMode) & (gameStatus)){
       controlMotors();
     }
       
 
     // If we've got a falling edge, need to check the frequency of the LED light
-    // TODO: See if removing this speeds up control
-    // If it does, need to make event more exclusive - healing_pin_state could be going low b/c of noise
     byte healing_pin_state = digitalRead(HEALING_PIN);
+    Serial.print("Healing Status: ");
+    Serial.println(healing_status);
     if ((!healing_pin_state) | (healing_status)) {
       healing_status = get_healing_status();
+      Serial.print("Healing Status after Checking: ");
+      Serial.println(healing_status);
       // Set healingFreq
       healingFreq = healing_status;
     }
@@ -603,7 +618,7 @@ void loop() {
       digitalWrite(WEAPON_OUT, HIGH);
     }
        
-    FastLEDshowESP32(); //Actually send the values to the ring -- Isn't this necessary if the display changes? Could be something to speed us up
+    FastLEDshowESP32(); //Actually send the values to the ring
     
     FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
     
@@ -622,7 +637,7 @@ void readPacket () {
   int packetSize = udp.parsePacket();
   if (packetSize) {
     // We've received a packet, so let's celebrate
-//    digitalWrite(LED_BUILTIN,HIGH);
+    digitalWrite(LED_BUILTIN,HIGH);
 
     // Read the packet into the buffer
     udp.read(packetBuffer, UDP_PACKET_SIZE);
@@ -645,7 +660,7 @@ void readPacket () {
   }
   // No packet received, sad.
   else{
-//    digitalWrite(LED_BUILTIN,LOW);
+    digitalWrite(LED_BUILTIN,LOW);
   }
 }
 
@@ -764,7 +779,8 @@ byte get_healing_status() {
   byte i = 0;
   start_time = millis();
   this_time = millis();
-  
+//  times_up = LOW;
+//  while(!times_up) {
   while (this_time - start_time <= 50) {
     this_state = digitalRead(HEALING_PIN);
     this_period_counts += 1;
@@ -786,6 +802,8 @@ byte get_healing_status() {
     last_state = this_state;
     this_time = millis();
   }
+  Serial.print("Time elapsed for measuring health: ");
+  Serial.println(this_time - start_time);
   // Turn off the timer
 //  timerAlarmDisable(timer);
 //  times_up = LOW;
