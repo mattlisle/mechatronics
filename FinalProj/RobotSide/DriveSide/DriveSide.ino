@@ -95,6 +95,7 @@ static TaskHandle_t userTaskHandle = 0;
 
 // Pins
 #define HEALING_PIN 36
+byte healingFreq;
 
 // Healing light constants
 #define TIMER_COUNTS 400000
@@ -492,7 +493,7 @@ void loop() {
     static byte healthNexus[4];      // health of the two nexi each is 10 bit (Red L, H, Blue L, H)
     static byte towerStatus[2];      // status of the two towers.  Not sure why this needs 4 bits each.
   
-    static byte healingFreq;  // First bit is for the low frequency (1), the second bit is for the high frequency (2), zero can be sent to the hat to request the information.
+    //static byte healingFreq;  // First bit is for the low frequency (1), the second bit is for the high frequency (2), zero can be sent to the hat to request the information.
     
     // I2C STUFF===========================================
     if ((currentTime - READPERIOD) >= readTime){  //if we haven't read for the correct amount of time we can do it now.
@@ -727,7 +728,14 @@ void healLEDs(int health){
       flashTimeOld = flashTime;   //store when we changed the state
     }
     for(int i=1; i<19; i++){
-      leds[healthLeds[i]] = WHITECOLOR*(health > (i*5))*ledsOn;  // the other leds go off in increments of 5
+      //leds[healthLeds[i]] = WHITECOLOR*!(health > (i*5))*ledsOn;  // the other leds go off in increments of 5
+      if(!(health > (i*5))){
+        leds[healthLeds[i]] = WHITECOLOR*ledsOn;  // the other leds go off in increments of 5
+        }
+      else{
+        leds[healthLeds[i]] = HEALTHCOLOR*(health > (i*5))*ledsOn;  
+      }
+      
     }
     //delay(50); 
   }
@@ -754,6 +762,10 @@ byte get_healing_status() {
   static byte result;  // Changed this to static byte
 
   // Forces second while loop to break unless we detect more than 1 period
+  for (int p = 0; p < 100; p++) {
+    period_counts[p] = 0;
+  }
+  
   period_counts[1] = 0;
     
   // Wait for the beginning of the next timer loop
@@ -789,7 +801,7 @@ byte get_healing_status() {
     last_state = this_state;
     this_time = millis();
   }
-  Serial.print("Time elapsed for measuring health: ")
+  Serial.print("Time elapsed for measuring health: ");
   Serial.println(this_time - start_time);
   // Turn off the timer
 //  timerAlarmDisable(timer);
@@ -811,6 +823,8 @@ byte get_healing_status() {
     if ((period > MIN1600) & (period < MAX1600)) {
       valid_periods_1600 += 1;
     } 
+    Serial.print("Period: ");
+    Serial.println(period);
     j++;
   }
 
@@ -820,6 +834,7 @@ byte get_healing_status() {
   } else if ((valid_periods_230 < 2) & (valid_periods_1600 > 20)) {
     result = 2;
   } else {
+    Serial.println("Set status back to zero");
     result = 0;
   }
 

@@ -121,9 +121,9 @@ void loop() {
   int throttleVal = analogRead(THROTTLE_PIN);
   int mag_val = map(throttleVal + THROTTLE_OFFSET, 0, 4095, -255, 255);
   if (abs(mag_val) < 10) {
-    max_steer = 80;
+    max_steer = 120;
   } else {
-    max_steer = map(abs(mag_val), 0, 255, 60, 110);
+    max_steer = map(abs(mag_val), 0, 255, 100, 160);
   }
   int steerVal = analogRead(STEERING_PIN);
   int dir_val = map(steerVal + STEERING_OFFSET, 0, 4095, -max_steer, max_steer);
