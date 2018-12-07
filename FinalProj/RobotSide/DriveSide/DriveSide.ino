@@ -23,6 +23,7 @@ FASTLED_USING_NAMESPACE
 #define ROBOTNUM 2            // robot number
 #define RED 0xFF0000          // color for the red team
 #define BLUE 0x0000FF         // color for the blue team
+#define YELLOW 0xFFFF00       // another color for cooldown
 #define HEALTHCOLOR 0x00FF00  // color for the health LEDs
 #define WHITECOLOR 0xFFFFFF  // color of white for healing
 #define FLASHHALFPERIOD 250   // the blue team is supposed to flash this is half of the period of that flash
@@ -258,8 +259,8 @@ static void i2c_read_test()
     ESP_LOGE(TAG, "I2C Timeout");
     Serial.println("I2C Timeout");
   } else if (ret == ESP_OK) {
-    Serial.printf(" MASTER READ FROM SLAVE ******\n");
-    disp_buf(data_rd, DATA_LENGTH);
+//    Serial.printf(" MASTER READ FROM SLAVE ******\n");
+//    disp_buf(data_rd, DATA_LENGTH);
     digitalWrite(2,LOW);
   } else {
     ESP_LOGW(TAG, " %s: Master read slave error, IO not connected...\n",
@@ -275,8 +276,8 @@ static void i2c_write_test()
   if (ret == ESP_ERR_TIMEOUT) {
     ESP_LOGE(TAG, "I2C Timeout");
   } else if (ret == ESP_OK) {
-    Serial.printf(" MASTER WRITE TO SLAVE\n");
-    disp_buf(data_wr, W_LENGTH);
+//    Serial.printf(" MASTER WRITE TO SLAVE\n");
+//    disp_buf(data_wr, W_LENGTH);
   } else {
     ESP_LOGW(TAG, "%s: Master write slave error, IO not connected....\n",
             esp_err_to_name(ret));
@@ -542,11 +543,11 @@ void loop() {
           towerStatus[1] = 0x0F & (data_rd[14]>>0);      // This can be cleaned up because you just need the and for the first one and the shift for the second but I like the consistency.
           towerStatus[2] = 0x0F & (data_rd[14]>>4);
         }
-        else{  // blink to show something went wrong
-          digitalWrite(2,LOW);
-          delay(250);
-          digitalWrite(2,HIGH);
-        }
+//        else{  // blink to show something went wrong
+//          digitalWrite(2,LOW);
+//          delay(250); //TODO: change this or remove it?
+//          digitalWrite(2,HIGH);
+//        }
         
     }
   
@@ -562,8 +563,8 @@ void loop() {
     if (0 == health){  // If we are dead turn off the lights.
       clearLEDs();
     }
-    Serial.print("health: "); 
-    Serial.println(health);
+//    Serial.print("health: "); 
+//    Serial.println(health);
 
     // TODO: uncomment/comment this delay?
     // SMALL BUG: due to uncommenting this line 
@@ -574,32 +575,34 @@ void loop() {
       
     // Read the packet sent by the controller
     readPacket();
-    
+    controlMotors();   
+     
+    //TODO: comment this and uncomment block below
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
-    if((health) & (!autoMode) & (gameStatus)){
-      controlMotors();
-    }
-      
-
+//    if((health) & (!autoMode) & (gameStatus)){
+//      controlMotors();
+//    }
+    // if on cooldown, can do something
+//    if(coolDownStatus){
+//      HEALTHCOLOR = YELLOW;
+//    }
+//    else{
+//      HEALTHCOLOR = GREEN;
+//    }
     // If we've got a falling edge, need to check the frequency of the LED light
     byte healing_pin_state = digitalRead(HEALING_PIN);
-    Serial.print("Healing Status: ");
-    Serial.println(healing_status);
     if ((!healing_pin_state) | (healing_status)) {
       healing_status = get_healing_status();
-      Serial.print("Healing Status after Checking: ");
-      Serial.println(healing_status);
       // Set healingFreq
       healingFreq = healing_status;
     }
+    
     if (healing_status) {
       // Set neopixel
-      digitalWrite(LED_BUILTIN,HIGH);
       healLEDs(health);
     } 
     else{
-      digitalWrite(LED_BUILTIN,LOW);
       // If not healing show health normally
       ShowHealth(health); //set the LEDs for the health
     }
@@ -616,10 +619,37 @@ void loop() {
     else{
       digitalWrite(WEAPON_OUT, HIGH);
     }
-       
+    
+    // Read the packet sent by the controller
+    readPacket();
+    controlMotors();//TODO: comment this and uncomment block below
+    // Use values in packet to control motors
+    // but only if we stayin alive and not in automode and gameStatus
+//    if((health) & (!autoMode) & (gameStatus)){
+//      controlMotors();
+//    }
+    
     FastLEDshowESP32(); //Actually send the values to the ring
     
+    // Read the packet sent by the controller
+    readPacket();
+    controlMotors();//TODO: comment this and uncomment block below
+    // Use values in packet to control motors
+    // but only if we stayin alive and not in automode and gameStatus
+//    if((health) & (!autoMode) & (gameStatus)){
+//      controlMotors();
+//    } 
+    
     FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
+    
+    // Read the packet sent by the controller
+    readPacket();
+    controlMotors(); //TODO: comment this and uncomment block below
+    // Use values in packet to control motors
+    // but only if we stayin alive and not in automode and gameStatus
+//    if((health) & (!autoMode) & (gameStatus)){
+//      controlMotors();
+//    }
     
 }
 
@@ -648,6 +678,18 @@ void readPacket () {
     // servos
     base_pos = packetBuffer[3];
     arm_pos = packetBuffer[4];
+
+//    Serial.print("Packet recieved:");
+//    Serial.print("     ");
+//    Serial.print(dc_right);
+//    Serial.print("     ");
+//    Serial.print(dc_left);
+//    Serial.print("     ");
+//    Serial.print(base_pos);
+//    Serial.print("     ");
+//    Serial.println(arm_pos);
+    
+    
     
     // Parse the directions from the third byte
     byte dir = packetBuffer[2];
@@ -691,6 +733,7 @@ void controlMotors () {
   // Base is reversed 
   baseServo.write(180-base_pos);
   armServo.write(arm_pos);
+  //Serial.println("motors moved, bitches");
 }
 
 /*******************************************************

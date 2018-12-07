@@ -166,10 +166,17 @@ void loop() {
   // Map values from 0 to 180 for servo
   int basepos = map(x, 0, maxMapVal, 0, 180);
   int armpos = map(y, 0, maxMapVal, 0, 180);
-  if(basepos>180) basepos = 180;
+  if(basepos>179) basepos = 179;
   if(basepos<0) basepos = 0;
-  if(armpos>90)armpos = 90;
-  if(armpos<0) armpos = 0;
+  if(basepos<10 | basepos>170){
+    if(armpos>179) armpos = 179;
+    if(armpos<0) armpos = 0;
+  }
+  else{
+    if(armpos>179)armpos = 179;
+    if(armpos<90) armpos = 90;
+  }
+    
   // Debug printing
   Serial.print(weaponUD-UD_center);
   Serial.print("   ");
