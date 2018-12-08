@@ -10,6 +10,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <ESPServo.h>
+//#include <Servo.h>
 #include <stdio.h>
 #include "esp_log.h"
 #include "driver/i2c.h"
@@ -575,21 +576,21 @@ void loop() {
       
     // Read the packet sent by the controller
     readPacket();
-    controlMotors();   
-     
-    //TODO: comment this and uncomment block below
+//    Serial.println("----------");
+//    Serial.print("Autonomous mode: ");
+//    Serial.println(autoMode);
+//    Serial.print("Game Status: ");
+//    Serial.println(gameStatus);
+//    Serial.print("Health: ");
+//    Serial.println(health);
+//    controlMotors();   
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
-//    if((health) & (!autoMode) & (gameStatus)){
-//      controlMotors();
-//    }
-    // if on cooldown, can do something
-//    if(coolDownStatus){
-//      HEALTHCOLOR = YELLOW;
-//    }
-//    else{
-//      HEALTHCOLOR = GREEN;
-//    }
+    if((health > 0) & (!autoMode) & (gameStatus)){
+//      Serial.println("Controlling motors");
+      controlMotors();
+    }
+    
     // If we've got a falling edge, need to check the frequency of the LED light
     byte healing_pin_state = digitalRead(HEALING_PIN);
     if ((!healing_pin_state) | (healing_status)) {
@@ -622,34 +623,34 @@ void loop() {
     
     // Read the packet sent by the controller
     readPacket();
-    controlMotors();//TODO: comment this and uncomment block below
+//    controlMotors();//TODO: comment this and uncomment block below
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
-//    if((health) & (!autoMode) & (gameStatus)){
-//      controlMotors();
-//    }
+    if((health > 0) & (!autoMode) & (gameStatus)){
+      controlMotors();
+    }
     
     FastLEDshowESP32(); //Actually send the values to the ring
     
     // Read the packet sent by the controller
     readPacket();
-    controlMotors();//TODO: comment this and uncomment block below
+//    controlMotors();//TODO: comment this and uncomment block below
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
-//    if((health) & (!autoMode) & (gameStatus)){
-//      controlMotors();
-//    } 
+    if((health > 0) & (!autoMode) & (gameStatus)){
+      controlMotors();
+    } 
     
     FastLED.delay(1000/FRAMES_PER_SECOND); // insert a delay to keep the framerate modest
     
     // Read the packet sent by the controller
     readPacket();
-    controlMotors(); //TODO: comment this and uncomment block below
+//    controlMotors(); //TODO: comment this and uncomment block below
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
-//    if((health) & (!autoMode) & (gameStatus)){
-//      controlMotors();
-//    }
+    if((health > 0) & (!autoMode) & (gameStatus)){
+      controlMotors();
+    }
     
 }
 
