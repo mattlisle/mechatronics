@@ -773,7 +773,7 @@ void hitLEDs(void){
  *******************************************************/
 void cooldownLEDs(void){
   int healthLeds[] = {1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,20,21,22,23}; // the location of the 24 LEDs used for health
-  int ledToLight = (millis()/50) % 20;
+  int ledToLight = ((int) (millis()/50)) % 20;
   leds[healthLeds[ledToLight]] = YELLOW;
 }
 
