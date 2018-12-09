@@ -51,8 +51,10 @@ SH1106 display(0x3c, 19, 21);
 
 /* -------------------- Global Varibales -------------------- */
 // WiFi
-const char* ssid = "Mechatronics";
-const char* password = "YayFunFun";
+const char* ssid = "Bikini Bots";
+const char* password = "krabbypatty";
+//const char* ssid = "Mechatronics";
+//const char* password = "YayFunFun";
 //const char* ssid = "iPhoneHotspot";
 //const char* password = "sexpanther";
 WiFiUDP udp;

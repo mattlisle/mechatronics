@@ -137,8 +137,10 @@ volatile byte times_up = LOW;
 byte healing_status = 0;
 
 // WiFi
-const char* ssid = "Mechatronics";
-const char* password = "YayFunFun";
+const char* ssid = "Bikini Bots";
+const char* password = "krabbypatty";
+//const char* ssid = "Mechatronics";
+//const char* password = "YayFunFun";
 //const char* ssid = "iPhoneHotspot";
 //const char* password = "sexpanther";
 WiFiUDP udp;
@@ -450,10 +452,6 @@ void setup() {
   pinMode(WEAPON_OUT, OUTPUT);
   // Healing
   pinMode(HEALING_PIN, INPUT);
-  // Healing Timer setup
-//  timer = timerBegin(2, PRESCALER, true); // changed this to timer 2
-//  timerAttachInterrupt(timer, &onTimer, true);
-//  timerAlarmWrite(timer, TIMER_COUNTS, true);
 
 
   // Attach servos
@@ -564,8 +562,6 @@ void loop() {
     if (0 == health){  // If we are dead turn off the lights.
       clearLEDs();
     }
-//    Serial.print("health: "); 
-//    Serial.println(health);
 
     // TODO: uncomment/comment this delay?
     // SMALL BUG: due to uncommenting this line 
@@ -576,18 +572,9 @@ void loop() {
       
     // Read the packet sent by the controller
     readPacket();
-    Serial.println("----------");
-    Serial.print("Autonomous mode: ");
-    Serial.println(autoMode);
-    Serial.print("Game Status: ");
-    Serial.println(gameStatus);
-    Serial.print("Health: ");
-    Serial.println(health);
-//    controlMotors();   
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
     if((health > 0) & (!autoMode) & (gameStatus)){
-//      Serial.println("Controlling motors");
       controlMotors();
     }
     
@@ -637,7 +624,6 @@ void loop() {
     
     // Read the packet sent by the controller
     readPacket();
-//    controlMotors();//TODO: comment this and uncomment block below
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
     if((health > 0) & (!autoMode) & (gameStatus)){
@@ -648,7 +634,6 @@ void loop() {
     
     // Read the packet sent by the controller
     readPacket();
-//    controlMotors();//TODO: comment this and uncomment block below
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
     if((health > 0) & (!autoMode) & (gameStatus)){
@@ -659,7 +644,6 @@ void loop() {
     
     // Read the packet sent by the controller
     readPacket();
-//    controlMotors(); //TODO: comment this and uncomment block below
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
     if((health > 0) & (!autoMode) & (gameStatus)){
@@ -685,6 +669,7 @@ void readPacket () {
   // Check if there's a packet to read
   int packetSize = udp.parsePacket();
   if (packetSize) {
+    //Serial.println("Packet");
     // We've received a packet, so let's celebrate
     digitalWrite(LED_BUILTIN,HIGH);
 
@@ -698,18 +683,6 @@ void readPacket () {
     // servos
     base_pos = packetBuffer[3];
     arm_pos = packetBuffer[4];
-
-//    Serial.print("Packet recieved:");
-//    Serial.print("     ");
-//    Serial.print(dc_right);
-//    Serial.print("     ");
-//    Serial.print(dc_left);
-//    Serial.print("     ");
-//    Serial.print(base_pos);
-//    Serial.print("     ");
-//    Serial.println(arm_pos);
-    
-    
     
     // Parse the directions from the third byte
     byte dir = packetBuffer[2];
@@ -721,6 +694,7 @@ void readPacket () {
   }
   // No packet received, sad.
   else{
+    //Serial.println("No Packet");
     digitalWrite(LED_BUILTIN,LOW);
   }
 }
@@ -874,8 +848,6 @@ byte get_healing_status() {
     last_state = this_state;
     this_time = millis();
   }
-  Serial.print("Time elapsed for measuring health: ");
-  Serial.println(this_time - start_time);
   // Turn off the timer
 //  timerAlarmDisable(timer);
 //  times_up = LOW;
@@ -896,8 +868,6 @@ byte get_healing_status() {
     if ((period > MIN1600) & (period < MAX1600)) {
       valid_periods_1600 += 1;
     } 
-    Serial.print("Period: ");
-    Serial.println(period);
     j++;
   }
 
@@ -907,7 +877,6 @@ byte get_healing_status() {
   } else if ((valid_periods_230 < 2) & (valid_periods_1600 > 20)) {
     result = 2;
   } else {
-    Serial.println("Set status back to zero");
     result = 0;
   }
 
