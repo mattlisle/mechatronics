@@ -40,7 +40,7 @@ FASTLED_USING_NAMESPACE
 #define NUM_LEDS    24  //Number of LEDs in the ring
 CRGB leds[NUM_LEDS];  // this is the place you set the value of the LEDs each LED is 24 bits
 
-#define BRIGHTNESS          60   // lower the brighness a bit so it doesn't look blown out on the camera.
+#define BRIGHTNESS         60   // lower the brighness a bit so it doesn't look blown out on the camera.
 #define FRAMES_PER_SECOND  120   // some number this is likely faster than needed
 
 // -- The core to run FastLED.show()
@@ -576,13 +576,13 @@ void loop() {
       
     // Read the packet sent by the controller
     readPacket();
-//    Serial.println("----------");
-//    Serial.print("Autonomous mode: ");
-//    Serial.println(autoMode);
-//    Serial.print("Game Status: ");
-//    Serial.println(gameStatus);
-//    Serial.print("Health: ");
-//    Serial.println(health);
+    Serial.println("----------");
+    Serial.print("Autonomous mode: ");
+    Serial.println(autoMode);
+    Serial.print("Game Status: ");
+    Serial.println(gameStatus);
+    Serial.print("Health: ");
+    Serial.println(health);
 //    controlMotors();   
     // Use values in packet to control motors
     // but only if we stayin alive and not in automode and gameStatus
@@ -650,6 +650,11 @@ void loop() {
     // but only if we stayin alive and not in automode and gameStatus
     if((health > 0) & (!autoMode) & (gameStatus)){
       controlMotors();
+    }
+    else{
+      // turn off motors if not in proper game modes
+      ledcWrite(left_channel, 0);
+      ledcWrite(right_channel, 0);
     }
     
 }

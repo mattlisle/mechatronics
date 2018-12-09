@@ -221,7 +221,7 @@ void loop() {
   digitalWrite(LED_BUILTIN,HIGH);
   sendPacket(dc_right, dc_left, dirByte, basepos, armpos);
   digitalWrite(LED_BUILTIN,LOW);
-  delay(50);
+  delay(10);
   display.clear();
   
 }
