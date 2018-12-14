@@ -142,16 +142,6 @@ void loop() {
   float weaponUD = analogRead(WEAPON_UD);
   float weaponLR = analogRead(WEAPON_LR);
 
-//  Serial.print(weaponLR);
-//  Serial.print("   ");
-//  Serial.print(weaponUD);
-//  Serial.print("   ");
-//  Serial.print(analogRead(THROTTLE_PIN));
-//  Serial.print("   ");
-//  Serial.print(analogRead(STEERING_PIN));
-//  Serial.println("   ");
-//  Serial.print("   ");
-  
   // Base and arm control
   // Dead bands
   if(abs(weaponUD - UD_center)>70){
@@ -170,7 +160,7 @@ void loop() {
   int armpos = map(y, 0, maxMapVal, 0, 180);
   if(basepos>179) basepos = 179;
   if(basepos<0) basepos = 0;
-  if(basepos<10 | basepos>170){
+  if(basepos<5 | basepos>165){
     if(armpos>179) armpos = 179;
     if(armpos<0) armpos = 0;
   }
@@ -254,29 +244,3 @@ void sendPacket (int throttleIn, int steeringIn, byte dirIn, int baseIn, int arm
 
   udp.endPacket();
 }
-
-
-/*******************************************************
- * Function: waitForGo
- * Sets go boolean once GO! message is received
-
-void waitForGo(){
-  while(1) {
-    int cb = udp.parsePacket();
-
-    // If there's a packet to read, read into myData
-    if(cb) {
-      udp.read(packetBuffer, UDP_PACKET_SIZE);
-      String myData= "";
-      for(int i= 0; i < UDP_PACKET_SIZE; i++) {
-        myData += (char)packetBuffer[i];
-      }
-
-      // If the packet said "GO!" let's gooooo
-      if(myData.equals("GO!")){
-        break;
-      }
-    }
-  }
-}
- *******************************************************/
