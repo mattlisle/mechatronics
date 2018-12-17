@@ -160,7 +160,7 @@ void loop() {
   int armpos = map(y, 0, maxMapVal, 0, 180);
   if(basepos>179) basepos = 179;
   if(basepos<0) basepos = 0;
-  if(basepos<5 | basepos>165){
+  if(basepos<5 | basepos>175){
     if(armpos>179) armpos = 179;
     if(armpos<0) armpos = 0;
   }
