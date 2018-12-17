@@ -18,6 +18,4 @@ This code was uploaded to our controller. It is an adaption of our code from the
 To run you must have the following libraries: SPI, WiFi, WifiUdp, Wire, and SH1106 (enclosed in our submission). The SH1106 library is for our OLED Display on the controller that displays the Wifi status, our current team assignment, and other robot control metrics. The folder esp8266-oled-ssd1306-master folder must be placed in Arduino/libraries. 
 
 
-PapiTrap.ino:
-
-This code was uploaded to a secondary ESP on our controller, in order to play the audio from : https://www.youtube.com/watch?v=evYsbeZePhs — the Krabby Patty Trap Remix. SoundData.h is the audio file converted into WAV parameters to be played. The XT_DAC_Audio library must be in Arduino/libraries. 
+The rest of the files/folders 
